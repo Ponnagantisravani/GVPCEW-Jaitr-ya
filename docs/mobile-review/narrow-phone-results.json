@@ -1,0 +1,138 @@
+{
+  "complete": true,
+  "results": [
+    {
+      "kind": "layout-result",
+      "role": "student",
+      "screen": "Dashboard",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "faculty",
+      "screen": "Dashboard",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "admin",
+      "screen": "Dashboard",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "academic_coordinator",
+      "screen": "Dashboard",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "student_coordinator",
+      "screen": "Dashboard",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "student",
+      "screen": "Digital ID",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "student",
+      "screen": "Student Profile",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "student",
+      "screen": "Attendance",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "faculty",
+      "screen": "Attendance",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "faculty",
+      "screen": "Marks",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "faculty",
+      "screen": "Assignments",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "admin",
+      "screen": "Academic Management",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "admin",
+      "screen": "User Management",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "academic_coordinator",
+      "screen": "Academic Calendar",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "academic_coordinator",
+      "screen": "Timetable Management",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "academic_coordinator",
+      "screen": "Exam Schedule",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "academic_coordinator",
+      "screen": "Syllabus",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "student",
+      "screen": "Notifications",
+      "width": 320,
+      "failures": []
+    },
+    {
+      "kind": "layout-result",
+      "role": "student",
+      "screen": "Mark Attendance",
+      "width": 320,
+      "failures": []
+    }
+  ]
+}

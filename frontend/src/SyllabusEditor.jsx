@@ -28,21 +28,300 @@ export const syllabusTemplates = [
   { id: 'blank', name: 'Custom semester syllabus', tag: 'START FROM SCRATCH', description: 'Begin with one semester. Add subjects, lab courses, electives and more semesters as needed.', create: () => ({ title: '', department: '', batch: '', description: '', structure: { semesters: [{ name: semesterName(0), courses: [emptyCourse()] }] } }) }
 ];
 
+function renderFormattedContent(text) {
+  if (!text) return null;
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  return lines.map((line, idx) => {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx > 0 && colonIdx < 50 && !line.startsWith('http') && !/^(https?|ftp):/i.test(line)) {
+      const heading = line.slice(0, colonIdx + 1);
+      const rest = line.slice(colonIdx + 1);
+      return (
+        <p key={idx} className="gvpcew-topic-line">
+          <strong>{heading}</strong>{rest}
+        </p>
+      );
+    }
+    return <p key={idx} className="gvpcew-topic-line">{line}</p>;
+  });
+}
+
+function SingleCoursePaper({ course, department, batch, annexure }) {
+  const code = course.code || course.course_code || '';
+  const title = course.title || course.course_name || '';
+  const category = course.category || '';
+  const ltpc = course.ltpc || `${course.l || '3'}-0-${course.p || '0'}-${course.credits || '3'}`;
+
+  // Course outcomes
+  const coIntro = course.co_intro || 'At the end of the Course, the student shall be able to:';
+  let coList = Array.isArray(course.co_list) && course.co_list.length ? course.co_list : [];
+  if (!coList.length && (course.course_outcomes || course.outcomes)) {
+    const rawOutcomes = course.course_outcomes || course.outcomes || '';
+    const lines = rawOutcomes.split('\n').map(l => l.trim()).filter(Boolean);
+    coList = lines.map((l, i) => {
+      const m = /^(?:CO([1-9])|[1-9]\.)\s*[:\.\-–]?\s*(.*)/i.exec(l);
+      return m ? { code: `CO${m[1] || i + 1}`, text: m[2] || l } : { code: `CO${i + 1}`, text: l };
+    });
+  }
+
+  // Units list
+  let unitsList = Array.isArray(course.units_list) && course.units_list.length ? course.units_list : [];
+  if (!unitsList.length) {
+    const roman = ['I', 'II', 'III', 'IV', 'V'];
+    for (let i = 1; i <= 5; i++) {
+      const uContent = course[`unit_${i}`];
+      const uLectures = course[`unit_${i}_lectures`] || (i === 3 ? '12 Lectures' : '09 Lectures');
+      if (uContent) {
+        unitsList.push({ number: `UNIT-${roman[i - 1]}`, lectures: uLectures, content: uContent });
+      }
+    }
+  }
+
+  // Books
+  const textBooks = Array.isArray(course.text_books_list) && course.text_books_list.length
+    ? course.text_books_list
+    : course.textbooks ? course.textbooks.split('\n').map(l => l.trim().replace(/^(?:[0-9]+[\.\)]|•|\*|-)\s*/, '')).filter(Boolean)
+    : [];
+
+  const refBooks = Array.isArray(course.reference_books_list) && course.reference_books_list.length
+    ? course.reference_books_list
+    : course.reference_books ? course.reference_books.split('\n').map(l => l.trim().replace(/^(?:[0-9]+[\.\)]|•|\*|-)\s*/, '')).filter(Boolean)
+    : [];
+
+  const webRefs = Array.isArray(course.web_references_list) && course.web_references_list.length
+    ? course.web_references_list
+    : course.web_references ? course.web_references.split('\n').map(l => l.trim().replace(/^(?:[0-9]+[\.\)]|•|\*|-)\s*/, '')).filter(Boolean)
+    : [];
+
+  return (
+    <div className="gvpcew-official-paper">
+      {/* Official College Header */}
+      <header className="gvpcew-paper-header">
+        <img src={logo} alt="GVPCEW Logo" className="gvpcew-paper-logo" />
+        <div className="gvpcew-paper-header-text">
+          <h2 className="gvpcew-inst-title">GAYATRI VIDYA PARISHAD COLLEGE OF ENGINEERING FOR WOMEN</h2>
+          <h3 className="gvpcew-inst-sub">(Autonomous)</h3>
+          <p className="gvpcew-inst-affil">(Approved by AICTE, New Delhi and Permanently Affiliated to Andhra University, Visakhapatnam)</p>
+          <p className="gvpcew-inst-address">Madhurawada :: Visakhapatnam – 530 048</p>
+        </div>
+      </header>
+
+      {/* Annexure / Admitted Batch */}
+      {annexure ? (
+        <div className="gvpcew-paper-annexure">{annexure}</div>
+      ) : batch ? (
+        <div className="gvpcew-paper-annexure">Applicable Admitted Batch: {batch}</div>
+      ) : null}
+
+      {/* Course Title & Category */}
+      <div className="gvpcew-paper-title-block">
+        <h1 className="gvpcew-course-title">{title.toUpperCase()}</h1>
+        {category && <h4 className="gvpcew-course-category">({category})</h4>}
+      </div>
+
+      {/* Course Code & L-T-P-C Row */}
+      <div className="gvpcew-course-meta-bar">
+        <div className="meta-left">
+          <strong>Course Code:</strong> <span>{code}</span>
+        </div>
+        <div className="meta-right">
+          <strong>L-T-P-C:</strong> <span>{ltpc}</span>
+        </div>
+      </div>
+
+      {/* Course Objectives (if present) */}
+      {course.objectives && (
+        <div className="gvpcew-section-box">
+          <div className="gvpcew-box-header">Course Objectives:</div>
+          <div className="gvpcew-box-body">
+            {renderFormattedContent(course.objectives)}
+          </div>
+        </div>
+      )}
+
+      {/* Course Outcomes Table */}
+      {coList.length > 0 && (
+        <div className="gvpcew-outcomes-block">
+          <div className="gvpcew-outcomes-intro">
+            <strong>Course Outcomes:</strong> {coIntro}
+          </div>
+          <table className="gvpcew-outcomes-table">
+            <tbody>
+              {coList.map((co, idx) => (
+                <tr key={co.code || idx}>
+                  <td className="co-code-col"><strong>{co.code}:</strong></td>
+                  <td className="co-text-col">{co.text}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Units List */}
+      {unitsList.length > 0 ? (
+        <div className="gvpcew-units-list">
+          {unitsList.map((u, uIdx) => (
+            <div key={u.number || uIdx} className="gvpcew-unit-box">
+              <div className="gvpcew-unit-header">
+                <span className="unit-label">{u.number || `UNIT-${['I', 'II', 'III', 'IV', 'V'][uIdx]}`}</span>
+                <span className="unit-lectures">{u.lectures || '09 Lectures'}</span>
+              </div>
+              <div className="gvpcew-unit-content">
+                {renderFormattedContent(u.content)}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : course.units ? (
+        <div className="gvpcew-section-box">
+          <div className="gvpcew-box-header">Detailed Syllabus:</div>
+          <div className="gvpcew-box-body">
+            {renderFormattedContent(course.units)}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Text Books Table */}
+      {textBooks.length > 0 && (
+        <div className="gvpcew-books-box">
+          <div className="gvpcew-books-header">Text Books:</div>
+          <ol className="gvpcew-books-numbered-list">
+            {textBooks.map((book, bIdx) => (
+              <li key={bIdx}>{book}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* Reference Books Table */}
+      {refBooks.length > 0 && (
+        <div className="gvpcew-books-box">
+          <div className="gvpcew-books-header">Reference Books:</div>
+          <ol className="gvpcew-books-numbered-list">
+            {refBooks.map((book, bIdx) => (
+              <li key={bIdx}>{book}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* Web References Table */}
+      {webRefs.length > 0 && (
+        <div className="gvpcew-books-box">
+          <div className="gvpcew-books-header">Web References:</div>
+          <ol className="gvpcew-books-numbered-list">
+            {webRefs.map((ref, rIdx) => (
+              <li key={rIdx}>{ref}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SyllabusDocument({ record }) {
-  return <article className="syllabus-print-document">
-    <header className="syllabus-college"><img src={logo} alt="GVPCEW logo" /><div><strong>Gayatri Vidya Parishad College of Engineering for Women</strong><span>(Autonomous) · Madhurawada, Visakhapatnam</span><span>Department: {record.department}</span></div></header>
-    <h2>{record.title}</h2><p className="syllabus-document-batch">Applicable admitted batch: {record.batch}</p>
-    {record.description && <p>{record.description}</p>}
-    {record.structure.semesters.map((semester, index) => <section className="syllabus-semester-document" key={index}>
-      <h3>{semester.name}</h3><div className="syllabus-table-scroll"><table><thead><tr>{columns.map(([key, label]) => <th key={key}>{label}</th>)}</tr></thead>
-        <tbody>{semester.courses.map((course, i) => <tr key={i}>{columns.map(([key]) => <td key={key}>{course[key] || '—'}</td>)}</tr>)}</tbody>
-        <tfoot><tr><td colSpan={8}>Total credits</td><td>{Number(semester.courses.reduce((sum, course) => sum + (Number(course.credits) || 0), 0).toFixed(2))}</td></tr></tfoot></table></div>
-      {semester.courses.filter(course => course.objectives || course.units || course.outcomes || course.references).map((course, i) => <div className="syllabus-subject-detail" key={i}>
-        <h4>{course.code} · {course.title}</h4>{[['objectives', 'Course objectives'], ['units', 'Unit-wise syllabus'], ['outcomes', 'Course outcomes'], ['references', 'Textbooks & references']].map(([key, label]) => course[key] && <div key={key}><b>{label}</b><p>{course[key]}</p></div>)}
-      </div>)}
-    </section>)}
-    <p className="muted">L: Lecture hours per week · P: Practical hours per week</p>
-  </article>;
+  const structure = record.structure || {};
+  const semesters = structure.semesters || [];
+
+  // A record is a subject-specific syllabus if it has a subject code/id or single course structure
+  const isSingleSubjectSyllabus = Boolean(record.subject_id)
+    || Boolean(record.subject_code)
+    || Boolean(structure.course_code || structure.code)
+    || (semesters.length === 1 && semesters[0]?.courses?.length === 1);
+
+  // If this is a subject-specific syllabus, render ONLY the official GVPCEW course paper (NO course structure table!)
+  if (isSingleSubjectSyllabus) {
+    const singleCourseData = (semesters.length === 1 && semesters[0]?.courses?.[0])
+      ? { ...structure, ...semesters[0].courses[0] }
+      : structure;
+
+    return (
+      <article className="syllabus-print-document">
+        <SingleCoursePaper
+          course={singleCourseData}
+          department={record.department || singleCourseData.department}
+          batch={record.batch || singleCourseData.batch}
+          annexure={singleCourseData.annexure || record.annexure}
+        />
+      </article>
+    );
+  }
+
+  // Otherwise, only for full 4-year institutional curriculum overviews:
+  return (
+    <article className="syllabus-print-document">
+      <header className="gvpcew-paper-header">
+        <img src={logo} alt="GVPCEW Logo" className="gvpcew-paper-logo" />
+        <div className="gvpcew-paper-header-text">
+          <h2 className="gvpcew-inst-title">GAYATRI VIDYA PARISHAD COLLEGE OF ENGINEERING FOR WOMEN</h2>
+          <h3 className="gvpcew-inst-sub">(Autonomous)</h3>
+          <p className="gvpcew-inst-affil">(Approved by AICTE, New Delhi and Permanently Affiliated to Andhra University, Visakhapatnam)</p>
+          <p className="gvpcew-inst-address">Madhurawada :: Visakhapatnam – 530 048</p>
+        </div>
+      </header>
+
+      <div className="gvpcew-paper-title-block">
+        <h1 className="gvpcew-course-title">{record.title}</h1>
+        <p className="syllabus-document-batch">Applicable Admitted Batch: {record.batch || '2024–25 Onwards'}</p>
+        {record.department && <p className="syllabus-document-batch">Department: {record.department}</p>}
+      </div>
+
+      {record.description && <p className="syllabus-document-desc">{record.description}</p>}
+
+      {semesters.map((semester, index) => (
+        <section className="syllabus-semester-document" key={index}>
+          <h3 className="semester-scheme-heading">{semester.name}</h3>
+
+          {/* Scheme Table */}
+          <div className="syllabus-table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  {columns.map(([key, label]) => (
+                    <th key={key}>{label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {semester.courses?.map((course, i) => (
+                  <tr key={i}>
+                    {columns.map(([key]) => (
+                      <td key={key}>{course[key] || '—'}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={8}>Total Credits</td>
+                  <td>
+                    {Number(semester.courses?.reduce((sum, course) => sum + (Number(course.credits) || 0), 0).toFixed(2))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Detailed Course Syllabus Sheets */}
+          {semester.courses?.map((course, i) => (
+            <SingleCoursePaper
+              key={course.code || i}
+              course={course}
+              department={record.department}
+              batch={record.batch}
+              annexure={course.annexure}
+            />
+          ))}
+        </section>
+      ))}
+
+      <p className="muted" style={{ marginTop: '24px', fontSize: '11.5px', textAlign: 'center' }}>
+        L: Lecture hours/week · P: Practical hours/week · Autonomous Scheme of Instruction
+      </p>
+    </article>
+  );
 }
 
 export function SyllabusEditor({ initial, onSave, onCancel, busy }) {

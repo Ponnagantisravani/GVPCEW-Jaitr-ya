@@ -1,0 +1,4 @@
+import {acceptsPush,secondsRemaining} from '../src/attendancePolicy';
+const event={type:'attendance_session' as const,session_id:'00000000-0000-4000-8000-000000000001',section_id:'section',user_id:'student',expires_at:'2026-10-10T10:01:00Z',broadcast:'false' as const},now=Date.parse('2026-10-10T10:00:00Z');
+test('only fresh alerts for the signed-in student can trigger server refresh',()=>{expect(acceptsPush(event,'student',now)).toBe(true);expect(acceptsPush(event,'another',now)).toBe(false);expect(acceptsPush({...event,expires_at:'invalid'},'student',now)).toBe(false);expect(acceptsPush(event,'student',now+60000)).toBe(false);expect(acceptsPush(null,'student',now)).toBe(false);});
+test('countdown uses server expiry and stops at zero',()=>{expect(secondsRemaining(event.expires_at,now)).toBe(60);expect(secondsRemaining(event.expires_at,now+59500)).toBe(1);expect(secondsRemaining(event.expires_at,now+61000)).toBe(0);expect(secondsRemaining('invalid',now)).toBe(0);});

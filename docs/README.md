@@ -1,17 +1,9 @@
-# GVPCEW Automatic Attendance System
+# GVPCEW College Management & Student Portal
 
-This repository is the initial production scaffold for the GVPCEW automatic attendance platform.
+See [the project README](../README.md) for installation, safe database migrations, first-administrator setup, local development, and deployment.
 
-## Modules
+The application includes React dashboards for students, faculty, administrators, student coordinators, and academic coordinators; an Express/PostgreSQL API; and the Python face-enrollment application. Portal features include registration and approval, attendance sessions, marks, assignments, timetable management, academic documents, notices, events, and notifications.
 
-- `backend`: Node.js + Express REST API
-- `frontend`: Bootstrap dashboard shell
-- `database`: PostgreSQL schema
-- `face-enrollment`: Python enrollment desktop app scaffold
+Run `npm test` for database-independent checks and `npm run build` for the production frontend. The syllabus integration suite (`npm --prefix backend run test:syllabus`) requires a running, migrated database containing at least one user; its changes are rolled back.
 
-## Next Steps
-
-1. Install backend dependencies with `npm install` inside `backend`.
-2. Create the PostgreSQL database and run `database/schema.sql` and `database/seed.sql`.
-3. Add enrollment, recognition, attendance, and reporting endpoints.
-4. Wire the frontend to the backend APIs.
+See [syllabus documentation](syllabus.md) for the syllabus workflow.

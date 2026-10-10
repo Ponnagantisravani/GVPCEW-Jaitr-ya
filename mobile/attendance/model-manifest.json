@@ -1,0 +1,32 @@
+{
+  "model": "mobilefacenet-v1",
+  "file": "android/app/src/main/assets/mobilefacenet-v1.tflite",
+  "sha256": "be4bc7cfc53f7bc336d0f28b1ab92535f618c913a422b683210750f6b5354854",
+  "source": "https://raw.githubusercontent.com/hugocornellier/face_detection_tflite/9e74dfc317647af0ea2ecd8d815092d65f9641a5/assets/models/mobilefacenet.tflite",
+  "source_commit": "9e74dfc317647af0ea2ecd8d815092d65f9641a5",
+  "source_license": "Apache-2.0 (upstream repository)",
+  "input": {
+    "shape": [
+      1,
+      112,
+      112,
+      3
+    ],
+    "type": 0
+  },
+  "output": {
+    "shape": [
+      1,
+      192
+    ],
+    "type": 0
+  },
+  "preprocessing": {
+    "size": 112,
+    "channels": "RGB",
+    "mean": 127.5,
+    "std": 128,
+    "alignment": "eye horizontal, eye midpoint (56,44), eye distance 44 pixels; unmirrored upright camera bitmap",
+    "output": "L2-normalized per sample; average five; L2-normalize average"
+  }
+}

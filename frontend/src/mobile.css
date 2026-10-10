@@ -1,0 +1,122 @@
+/* Shared screen layouts. Keep academic print sheets independent of viewport size. */
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 100px; scroll-padding-bottom: 100px; }
+.shell :is(section, article, form, fieldset), .login > * { min-width: 0; }
+.shell :is(img, video, iframe), .login :is(img, video) { max-width: 100%; }
+.shell :is(h1,h2,h3,h4,p,label), .login :is(h1,h2,p,a) { overflow-wrap: anywhere; }
+.student-picker { min-width: 0; margin: 0; padding: 12px; border: 1px solid #cbd5d0; border-radius: 10px; }
+.student-picker legend { padding: 0 5px; font-size: 14px; font-weight: 700; }
+.student-picker-list { max-height: 280px; overflow-y: auto; overscroll-behavior: contain; }
+.portal-form .student-picker-list label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 4px; cursor: pointer; border-bottom: 1px solid #e0e6de; }
+.student-picker-list input { flex: 0 0 auto; width: 20px; height: 20px; accent-color: #245c49; }
+.student-picker-list label > span { display: grid; gap: 4px; min-width: 0; }
+.student-picker-list label > span > span { font-weight: 400; }
+@media screen and (max-width: 1100px) and (min-width: 901px) {
+  .shell .grid, .shell .dashboard-split { grid-template-columns: minmax(0,1fr); }
+  .shell .span2 { grid-column: 1 / -1; }
+  .shell .access-toolbar { grid-template-columns: minmax(0,1fr); }
+  .shell .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media screen and (max-width: 900px) {
+  .shell > .content { padding-left: max(16px,env(safe-area-inset-left)); padding-right: max(16px,env(safe-area-inset-right)); }
+  .shell > .content > header { padding-left: max(16px,env(safe-area-inset-left)); padding-right: max(16px,env(safe-area-inset-right)); }
+  .shell > aside { padding-left: max(16px,env(safe-area-inset-left)); }
+  .shell :is(button, input, select, textarea, summary), .login :is(button,input,select,a) { touch-action: manipulation; }
+  .shell :is(button,summary), .shell .syllabus-actions a { min-height: 44px; }
+  .shell :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { font-size: 16px; }
+  .shell :is(button,a) { overflow-wrap: anywhere; }
+  .shell button > svg { flex-shrink: 0; }
+  .shell :is(.portal-workspace,.syllabus-workspace,.calendar-editor-wrapper,.exam-timetable-wrapper,.timetable-container,.monthly-register,.digital-id-container) { width: 100%; max-width: 100%; min-width: 0; }
+  .shell :is(.portal-table,.overflow,.timetable-table-wrapper,.exam-table-scroll-container,.syllabus-table-scroll) { min-width: 0; max-width: 100%; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .shell :is(.portal-actions,.people-actions,.calendar-editor-toolbar,.calendar-toolbar-left,.calendar-toolbar-right,.timetable-controls,.timetable-header-actions,.id-card-toolbar,.id-toolbar-left,.id-toolbar-right,.image-action-buttons) { flex-wrap: wrap; min-width: 0; }
+  .shell :is(.portal-actions,.panel-head,.syllabus-heading) > * { min-width: 0; max-width: 100%; }
+  .shell .notification { flex: 0 0 44px; }
+  .shell .mobile-menu { width: 44px; min-height: 44px; }
+  .shell .bottom-nav button { white-space: normal; line-height: 1.3; }
+  .shell :is(.timetable-modal-backdrop,.syllabus-modal-backdrop) { padding: max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); }
+  .shell :is(.timetable-modal-content,.syllabus-template-modal) { max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
+  .shell .syllabus-pdf { height: 65vh; height: 65dvh; min-height: 280px; }
+  .shell .monthly-register th[scope=row] { position: sticky; left: 0; z-index: 1; background: #f0f5ee; min-width: 125px; max-width: 160px; white-space: normal; }
+  .shell .monthly-register :is(td,th) { min-width: 42px; }
+  .shell .timetable-matrix-table th:first-child { position: sticky; left: 0; z-index: 1; }
+  .shell :is(.profile,.hero-brand-card,.hero-actions,.single-branch-header) { flex-wrap: wrap; }
+}
+@media screen and (max-width: 600px) {
+  .shell .grid, .shell .workspace-form, .shell .syllabus-fields, .shell .syllabus-list { grid-template-columns: minmax(0,1fr); }
+  .shell .grid > .span2 { grid-column: 1 / -1; }
+  .shell .portal-form { grid-template-columns: minmax(0,1fr); padding: 12px; }
+  .shell .portal-form > * { min-width: 0; }
+  .shell .portal-form :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { width: 100%; }
+  .shell .portal-stats article { padding: 12px; }
+  .shell .portal-stats strong { font-size: 24px; overflow-wrap: anywhere; }
+  .shell :is(.portal-list-item,.syllabus-start-options > button) { padding: 14px; gap: 12px; }
+  .shell .portal-list-item > * { min-width: 0; max-width: 100%; }
+  .shell .mobile-records tbody td { display: block; }
+  .shell .mobile-records tbody td[data-label]::before { display: block; margin-bottom: 6px; font-size: 12px; }
+  .shell .mobile-records tbody td > * { max-width: 100%; }
+  .shell .people-actions { flex-wrap: wrap; gap: 8px; }
+  .shell .people-actions button { flex: 1 1 auto; }
+  .shell :is(.academic-calendar,.exam-schedule-sheet,.syllabus-print-document,.syllabus-editor-section,.syllabus-editor-toolbar) { padding: 14px; }
+  .shell .calendar-semester { max-width: 100%; overflow-x: auto; }
+  .shell .calendar-semester table { min-width: 560px; }
+  .shell .calendar-semester h3 { position: sticky; left: 0; }
+  .shell :is(.calendar-toolbar-left,.calendar-toolbar-right,.exam-action-buttons,.syllabus-actions) { width: 100%; }
+  .shell :is(.calendar-toolbar-left,.calendar-toolbar-right,.exam-action-buttons,.syllabus-actions) > :is(button,a) { flex: 1 1 auto; justify-content: center; }
+  .shell .exam-single-card { align-items: stretch; flex-direction: column; gap: 12px; padding: 14px; }
+  .shell .exam-card-date-col { width: auto; padding-bottom: 10px; border-bottom: 1px solid #e0e6de; }
+  .shell .sig-block { width: auto; max-width: 100%; }
+  .shell .syllabus-library-filters { align-items: stretch; }
+  .shell .syllabus-library-filters > label { flex: 1 1 100%; min-width: 0; max-width: 100%; }
+  .shell .syllabus-heading h2 { align-items: flex-start; font-size: 19px; }
+  .shell .syllabus-start-options > button > span:last-child { min-width: 0; }
+  .shell .syllabus-college { flex-direction: column; gap: 12px; }
+  .shell .syllabus-template-modal { padding: 16px; }
+  .shell .alert-row { grid-template-columns: 20px minmax(0,1fr); }
+  .shell .alert-row > small { grid-column: 2; }
+  .shell .profile > div { min-width: 0; }
+  .shell .modal-actions { flex-wrap: wrap; }
+  .login { padding-left: max(16px,env(safe-area-inset-left)); padding-right: max(16px,env(safe-area-inset-right)); }
+  .login > section h1 { font-size: clamp(26px,7vw,34px); }
+  .login form { padding: 24px 18px; }
+  .login form a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+@media screen and (max-width: 360px) {
+  .shell > .content { padding-left: 12px; padding-right: 12px; }
+  .shell > .content > header { margin-left: -12px; margin-right: -12px; }
+  .shell .panel { padding: 12px; }
+  .shell .compact-action-list { grid-template-columns: minmax(0,1fr); }
+  .shell .stat-card { padding: 12px 10px; }
+}
+@media screen and (max-height: 500px) and (max-width: 900px) {
+  .shell > .content > header { position: relative; }
+  .shell .bottom-nav { padding-top: 4px; }
+  .shell .bottom-nav button { min-height: 44px; flex-direction: row; flex-wrap: wrap; }
+  .login { align-content: start; }
+}
+
+/* Calendar template picker also needs an explicit layout without utility CSS. */
+.template-backdrop { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 20px; background: #142b22a6; }
+.template-modal { position: relative; width: min(900px,100%); max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; padding: 24px; border-radius: 18px; background: white; }
+.template-modal-header { padding-right: 36px; }
+.template-modal-header h2 { font-size: 21px; line-height: 1.4; }
+.template-subtitle { color: #607064; line-height: 1.6; }
+.template-close { position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; border: 1px solid #dce6de; border-radius: 8px; background: white; font-size: 24px; cursor: pointer; }
+.calendar-template-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 20px 0; }
+.calendar-template-card { min-width: 0; padding: 14px; border: 1px solid #dce6de; border-radius: 12px; cursor: pointer; }
+.calendar-template-card.active { background: #f0fdfa; border-color: #0f766e; }
+.template-preview > div:last-child { max-width: 100%; overflow: auto; max-height: 240px; }
+.template-preview table { min-width: 560px; width: 100%; border-collapse: collapse; }
+.template-preview :is(td,th) { padding: 10px; border-bottom: 1px solid #e0e6de; }
+.template-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+@media screen and (max-width: 900px) {
+ .shell .stat-card strong { display: block; margin: 5px 0; }
+ .shell .template-backdrop { padding: max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); }
+ .shell .template-modal { max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+}
+@media screen and (max-width: 600px) {
+ .shell .template-modal { padding: 16px; }
+ .shell .calendar-template-grid { grid-template-columns: minmax(0,1fr); }
+ .shell .template-actions button { flex: 1 1 auto; }
+ .shell .cal-holiday-edit-item { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; margin-bottom: 16px; }
+ .shell .cal-holiday-edit-item input { width: 100%; }
+ .shell .cal-holiday-edit-item > span { display: none; }
+}

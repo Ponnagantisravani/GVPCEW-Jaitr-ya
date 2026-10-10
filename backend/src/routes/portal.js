@@ -1,22 +1,39 @@
-import { Router } from 'express';
+import { Router } from '../utils/router.js';
 import bcrypt from 'bcryptjs';
 import { pool } from '../config/db.js';
 import { studentGroups } from '../config/studentGroups.js';
 import { requireAuth, allowRoles } from '../middleware/auth.js';
+import {managementScope,manageDepartmentScope,sectionScope,teachingScope,subjectScope,noticeScope} from '../services/portalScope.js';
 
 export const portalRouter = Router();
 const portalRoles = ['admin', 'faculty', 'academic_coordinator', 'student', 'student_coordinator'];
 const manageableRoles = ['student', 'student_coordinator', 'faculty', 'academic_coordinator'];
+
+// Faculty workspaces are keyed by `faculty.id`, not just the role mapping. Keep
+// the profile in place whenever an administrator grants faculty access.
+async function ensureFacultyProfile(client, userId) {
+  await client.query(
+    `insert into faculty(user_id, employee_code, department_id)
+     select $1, 'AUTO-' || $1::text,
+       (select department_id from students where user_id=$1)
+     where not exists (select 1 from faculty where user_id=$1)
+     on conflict (user_id) do nothing`,
+    [userId]
+  );
+}
 
 portalRouter.get('/dashboard', requireAuth, async (req, res, next) => {
   try {
     const role = req.query.role;
     const roles = req.user.roles || [req.user.role];
     if (!roles.includes(role)) return res.status(403).json({ message: 'This role is not assigned to your account.' });
+    const args=[req.user.sub,role];
     const [students, faculty, subjects, sessions, notices] = await Promise.all([
-      pool.query('select count(*)::int total from students'), pool.query('select count(*)::int total from faculty'),
-      pool.query('select count(*)::int total from subjects'), pool.query("select count(*)::int total from attendance_sessions where stopped_at is null and expires_at > now()"),
-      pool.query('select count(*)::int total from notices where expires_at is null or expires_at > now()')
+      pool.query(`select count(*)::int total from students s where ${manageDepartmentScope('s.department_id')} or ($2='faculty' and ${teachingScope('s.academic_section_id')}) or ($2='student' and s.user_id=$1) or ($2='student_coordinator' and ${sectionScope('s.academic_section_id')})`,args),
+      pool.query(`select count(*)::int total from faculty f where ${manageDepartmentScope('f.department_id')} or ($2='faculty' and f.user_id=$1) or ($2 in ('student','student_coordinator') and exists(select 1 from timetable t where t.faculty_id=f.id and t.status='published' and ${sectionScope('t.academic_section_id')}))`,args),
+      pool.query(`select count(*)::int total from subjects s where ${subjectScope('s')}`,args),
+      pool.query(`select count(*)::int total from attendance_sessions a where stopped_at is null and expires_at>now() and (${manageDepartmentScope('(select department_id from academic_sections where id=a.academic_section_id)')} or ($2='faculty' and a.coordinator_user_id=$1) or ($2 in ('student','student_coordinator') and ${sectionScope('a.academic_section_id')}))`,args),
+      pool.query(`select count(*)::int total from notices n where (expires_at is null or expires_at>now()) and ${noticeScope('n')}`,args)
     ]);
     const values = { students: students.rows[0].total, faculty: faculty.rows[0].total, subjects: subjects.rows[0].total, sessions: sessions.rows[0].total, notices: notices.rows[0].total };
     res.json({ values });
@@ -24,12 +41,12 @@ portalRouter.get('/dashboard', requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-portalRouter.get('/subjects', requireAuth, async (_req, res) => {
-  const { rows } = await pool.query(`select s.id,s.code,s.name,d.name department,u.full_name faculty from subjects s left join departments d on d.id=s.department_id left join faculty f on f.id=s.faculty_id left join users u on u.id=f.user_id order by s.code`);
+portalRouter.get('/subjects', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(`select s.id,s.code,s.name,d.name department,u.full_name faculty from subjects s left join departments d on d.id=s.department_id left join faculty f on f.id=s.faculty_id left join users u on u.id=f.user_id where ${subjectScope('s')} order by s.code`,[req.user.sub,req.user.activeRole]);
   res.json({ subjects: rows });
 });
-portalRouter.get('/timetable', requireAuth, async (_req, res) => {
-  const { rows } = await pool.query(`select t.id,t.day_of_week,t.start_time,t.end_time,s.code,s.name subject,c.room_code classroom,u.full_name faculty from timetable t join subjects s on s.id=t.subject_id join classrooms c on c.id=t.classroom_id join faculty f on f.id=t.faculty_id join users u on u.id=f.user_id order by t.day_of_week,t.start_time`);
+portalRouter.get('/timetable', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(`select t.id,t.day_of_week,t.start_time,t.end_time,t.status,t.academic_section_id section_id,t.academic_year,x.year_number,x.semester_number,x.section_name,d.name department,s.code,s.name subject,c.room_code classroom,u.full_name faculty from timetable t join academic_sections x on x.id=t.academic_section_id join departments d on d.id=x.department_id join subjects s on s.id=t.subject_id join classrooms c on c.id=t.classroom_id join faculty f on f.id=t.faculty_id join users u on u.id=f.user_id where ${manageDepartmentScope('x.department_id')} or (t.status='published' and (($2='faculty' and f.user_id=$1) or ($2 in ('student','student_coordinator') and ${sectionScope('t.academic_section_id')}))) order by t.day_of_week,t.start_time`,[req.user.sub,req.user.activeRole]);
   res.json({ timetable: rows });
 });
 portalRouter.get('/users', requireAuth, allowRoles('admin'), async (_req, res) => {
@@ -65,12 +82,15 @@ portalRouter.patch('/users/:id/roles', requireAuth, allowRoles('admin'), async (
     for (const role of requestedRoles) {
       await client.query('insert into user_roles(user_id, role) values($1, $2)', [req.params.id, role]);
     }
+    if (requestedRoles.includes('faculty')) await ensureFacultyProfile(client, req.params.id);
 
+    if(!requestedRoles.includes('academic_coordinator')){await client.query('delete from academic_coordinator_departments where user_id=$1',[req.params.id]);await client.query('delete from academic_institution_access where user_id=$1',[req.params.id]);}
+    if(!requestedRoles.includes('student_coordinator'))await client.query('delete from student_coordinator_sections where user_id=$1',[req.params.id]);
     const primaryRole = requestedRoles.includes('admin')
       ? 'admin'
       : requestedRoles.includes('faculty')
       ? 'faculty'
-      : requestedRoles[0] || 'student';
+      : 'student';
 
     const { rows } = await client.query(
       `update users u
@@ -183,6 +203,7 @@ portalRouter.patch('/admin/people/:id', requireAuth, allowRoles('admin'), async 
     }
     if (employeeCode?.trim()) {
       const departmentId = await resolveStudentDepartment(client, department);
+      await ensureFacultyProfile(client, req.params.id);
       await client.query('update faculty set employee_code=$2,department_id=case when $4 then $3::uuid else department_id end where user_id=$1', [req.params.id, employeeCode.trim(), departmentId, department !== undefined]);
     }
     await client.query('commit');
@@ -202,8 +223,9 @@ portalRouter.delete('/admin/people/:id', requireAuth, allowRoles('admin'), async
   if (!rowCount) return res.status(404).json({ message: 'User account was not found.' });
   res.status(204).end();
 });
-portalRouter.get('/notices', requireAuth, async (_req, res) => {
-  const { rows } = await pool.query(`select id,title,description,category,published_at,expires_at,attachment_url from notices where expires_at is null or expires_at > now() order by published_at desc`);
+portalRouter.get('/notices', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(`select id,title,description,category,published_at,expires_at,attachment_url from notices n
+    where (n.expires_at is null or n.expires_at > now()) and ${noticeScope('n')} order by n.published_at desc`,[req.user.sub,req.user.activeRole]);
   res.json({ notices: rows });
 });
 portalRouter.get('/events', requireAuth, async (_req, res, next) => {
@@ -215,9 +237,30 @@ portalRouter.get('/events', requireAuth, async (_req, res, next) => {
   }
 });
 portalRouter.post('/notices', requireAuth, allowRoles('admin','faculty','academic_coordinator','student_coordinator'), async (req, res) => {
-  const { title, description, category = 'general', expiresAt = null } = req.body;
+  let { title, description, category = 'general', expiresAt = null, departmentId = null, sectionId = null } = req.body;
   if (!title?.trim() || !description?.trim()) return res.status(400).json({ message: 'A title and description are required.' });
-  const { rows } = await pool.query(`insert into notices(title,description,category,expires_at,author_id) values($1,$2,$3,$4,$5) returning id,title,description,category,published_at,expires_at`, [title.trim(), description.trim(), category, expiresAt, req.user.sub]);
+  if ((departmentId && !sectionId) || (!departmentId && sectionId)) return res.status(400).json({message:'Choose both a department and section.'});
+  if (req.user.activeRole==='student_coordinator') {
+    const {rows}=await pool.query('select x.department_id,x.id academic_section_id from student_coordinator_sections r join academic_sections x on x.id=r.academic_section_id where r.user_id=$1 and ($2::uuid is null or x.id=$2)',[req.user.sub,sectionId]);
+    if(rows.length!==1)return res.status(403).json({message:'Select one of your assigned classes.'});
+    const own=rows[0];
+    if(!own?.academic_section_id || (sectionId && sectionId!==own.academic_section_id) || (departmentId && departmentId!==own.department_id)) return res.status(403).json({message:'You can announce only to your assigned class.'});
+    departmentId=own.department_id;sectionId=own.academic_section_id;
+  }
+  if (req.user.activeRole==='faculty') {
+    if (!departmentId || !sectionId) return res.status(400).json({message:'Choose the department and section for this faculty announcement.'});
+    const allowed=await pool.query(`select 1 from timetable t join faculty f on f.id=t.faculty_id join academic_sections x on x.id=t.academic_section_id
+      where f.user_id=$1 and x.id=$2 and x.department_id=$3 and t.status='published' limit 1`,[req.user.sub,sectionId,departmentId]);
+    if(!allowed.rowCount)return res.status(403).json({message:'You can announce only to sections assigned to you.'});
+  }
+  if(req.user.activeRole==='academic_coordinator'){
+    const {academicAccess,requireDepartment,requireSections}=await import('../services/academicAccess.js');
+    if(!departmentId){if(!(await academicAccess(req)).institutionWide)return res.status(403).json({message:'Select a class in your assigned department.'});}
+    else {await requireDepartment(req,departmentId);await requireSections(req,[sectionId]);}
+  }
+  if(sectionId){const valid=await pool.query('select 1 from academic_sections where id=$1 and department_id=$2',[sectionId,departmentId]);if(!valid.rowCount)return res.status(400).json({message:'The section does not belong to this department.'});}
+  const { rows } = await pool.query(`insert into notices(title,description,category,expires_at,author_id,target_department_id,target_academic_section_id)
+    values($1,$2,$3,$4,$5,$6,$7) returning id,title,description,category,published_at,expires_at`, [title.trim(), description.trim(), category, expiresAt, req.user.sub, departmentId, sectionId]);
   res.status(201).json({ notice: rows[0] });
 });
 portalRouter.post('/events/:id/register', requireAuth, allowRoles('student'), async (req, res) => {

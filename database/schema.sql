@@ -24,7 +24,7 @@ create table if not exists user_roles (
   assigned_by uuid references users(id) on delete set null,
   primary key (user_id, role)
 );
-insert into user_roles(user_id, role) select id, role from users on conflict do nothing;
+
 
 create table if not exists students (
   id uuid primary key default gen_random_uuid(),
@@ -96,6 +96,39 @@ create table if not exists academic_sections (
 
 alter table students add column if not exists academic_section_id uuid references academic_sections(id);
 
+-- The authoritative faculty teaching assignment for one subject in one class section.
+create table if not exists faculty_section_assignments (
+  id uuid primary key default gen_random_uuid(),
+  faculty_id uuid not null references faculty(id) on delete restrict,
+  department_id uuid not null references departments(id) on delete restrict,
+  year_number integer not null check (year_number between 1 and 4),
+  semester_number integer not null check (semester_number between 1 and 8),
+  academic_section_id uuid not null references academic_sections(id) on delete cascade,
+  subject_id uuid not null references subjects(id) on delete restrict,
+  academic_year text not null,
+  status text not null default 'active' check (status in ('active','inactive')),
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(academic_section_id, subject_id)
+);
+create index if not exists idx_faculty_section_assignments_faculty on faculty_section_assignments(faculty_id, status);
+create index if not exists idx_faculty_section_assignments_section on faculty_section_assignments(academic_section_id, status);
+
+-- Subjects explicitly offered to one class section; department catalog subjects are not automatically offered everywhere.
+create table if not exists section_subjects (
+  id uuid primary key default gen_random_uuid(),
+  academic_section_id uuid not null references academic_sections(id) on delete cascade,
+  subject_id uuid not null references subjects(id) on delete restrict,
+  subject_type text not null default 'theory' check (subject_type in ('theory','lab','elective','project','other')),
+  credits numeric(4,2),
+  semester_number integer not null check (semester_number between 1 and 8),
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique(academic_section_id,subject_id)
+);
+create index if not exists idx_section_subjects_section on section_subjects(academic_section_id);
+
 create table if not exists timetable (
   id uuid primary key default gen_random_uuid(),
   subject_id uuid not null references subjects(id) on delete cascade,
@@ -135,6 +168,17 @@ create table if not exists dataset_images (
   byte_size integer not null check (byte_size > 0),
   created_at timestamptz not null default now()
 );
+
+create table if not exists enrollment_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid references students(id) on delete set null,
+  operation text not null check (operation in ('lookup','upload')),
+  source_ip inet,
+  user_agent text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_enrollment_audit_student_created on enrollment_audit_log(student_id, created_at desc);
 
 create table if not exists attendance (
   id uuid primary key default gen_random_uuid(),
@@ -176,6 +220,7 @@ create table if not exists marks (
   score numeric(6,2) not null check (score >= 0),
   maximum_score numeric(6,2) not null check (maximum_score > 0),
   created_by uuid references faculty(id),
+  assignment_scores jsonb,
   updated_at timestamptz not null default now(),
   unique(student_id, subject_id, examination_type)
 );
@@ -184,12 +229,14 @@ create table if not exists assignments (
   id uuid primary key default gen_random_uuid(),
   subject_id uuid not null references subjects(id) on delete cascade,
   faculty_id uuid not null references faculty(id),
+  academic_section_id uuid references academic_sections(id) on delete cascade,
   title text not null,
   description text,
   deadline timestamptz not null,
   attachment_url text,
   created_at timestamptz not null default now()
 );
+create index if not exists idx_assignments_section on assignments(academic_section_id, subject_id);
 
 create table if not exists assignment_submissions (
   id uuid primary key default gen_random_uuid(),
@@ -244,6 +291,10 @@ create table if not exists notices (
   author_id uuid references users(id)
 );
 
+alter table notices add column if not exists target_department_id uuid references departments(id) on delete set null;
+alter table notices add column if not exists target_academic_section_id uuid references academic_sections(id) on delete set null;
+create index if not exists idx_notices_target_section on notices(target_academic_section_id, published_at desc);
+
 create table if not exists events (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -272,6 +323,7 @@ create table if not exists notifications (
   type text not null default 'info',
   link text,
   read_at timestamptz,
+  scheduled_for timestamptz,
   created_at timestamptz not null default now()
 );
 

@@ -2,6 +2,7 @@ import os
 import base64
 import json
 import sys
+import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -73,6 +74,17 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json({"message": "Not found"}, 404)
             return
 
+        service_key = os.environ.get("FACE_SERVICE_KEY", "")
+        supplied_key = self.headers.get("X-Face-Service-Key", "")
+        if not service_key or not hmac.compare_digest(supplied_key, service_key):
+            self._send_json({"message": "Unauthorized"}, 401)
+            return
+
+        content_length = int(self.headers.get("Content-Length", "0"))
+        if content_length <= 0 or content_length > 12_000_000:
+            self._send_json({"message": "Invalid or oversized request"}, 413)
+            return
+
         try:
             payload = _read_json_body(self)
             image_data = payload.get("image")
@@ -84,8 +96,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             image_bytes = base64.b64decode(image_data)
             response, status = self.api.analyze(image_bytes)
             self._send_json(response, status)
-        except Exception as error:
-            self._send_json({"message": str(error)}, 500)
+        except Exception:
+            self._send_json({"message": "Face analysis failed"}, 500)
 
 
 def run(host="127.0.0.1", port=5001):

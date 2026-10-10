@@ -1,589 +1,154 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
-import {
-  Calendar, Clock, CheckCircle2, XCircle, AlertTriangle, Users, BookOpen,
-  ClipboardList, Award, FileText, Check, Plus, Edit3, Trash2, Printer,
-  Upload, Search, Filter, RefreshCw, Send, ShieldCheck, ChevronRight,
-  TrendingUp, User, UserCheck, MessageSquare, ArrowRight, Sparkles, Layers,
-  Lock, Unlock, Eye, HelpCircle, Download, Save, BookMarked
-} from 'lucide-react';
+import {MonthlyAttendance} from './MonthlyAttendance.jsx';
+import {UploadedAttendance} from './UploadedAttendance.jsx';
+import {WeeklyAttendance} from './WeeklyAttendance.jsx';
+import {WeeklyTimetable} from './WeeklyTimetable.jsx';
+import React,{useEffect,useState} from 'react';
+import {api} from './api.js';
+import {DataTable,errorMessage,NotificationCenter} from './LiveWorkspaces.jsx';
 
-// Storage Keys
-const FACULTY_ATTENDANCE_KEY = 'gvpcew_faculty_attendance_v2';
-const FACULTY_ASSIGNMENTS_KEY = 'gvpcew_faculty_assignments_v2';
-const FACULTY_INTERNAL_MARKS_KEY = 'gvpcew_faculty_internal_marks_v2';
-const FACULTY_CORRECTIONS_KEY = 'gvpcew_faculty_corrections_v2';
-const FACULTY_SUBSTITUTIONS_KEY = 'gvpcew_faculty_substitutions_v2';
-const facultyApi = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api' });
+const weekday = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const displayTime = value => String(value || '').slice(0, 5);
 
-function facultyApiConfig() {
-  try {
-    const session = JSON.parse(localStorage.getItem('gvpcew_session') || '{}');
-    return session.token ? { headers: { Authorization: `Bearer ${session.token}` } } : {};
-  } catch {
-    return {};
-  }
+function PublishedTimetable({endpoint,fallbackEndpoint,title,description}){
+ const [rows,setRows]=useState([]),[documents,setDocuments]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
+ const load=async()=>{
+  setError('');
+  try { let response; try { response=await api.get(endpoint); } catch(error) { if(error.response?.status!==404||!fallbackEndpoint) throw error; response=await api.get(fallbackEndpoint); } setRows(response.data.timetable || []);setDocuments(response.data.documents || []); }
+  catch(e){setError(errorMessage(e));}
+  finally{setLoading(false);}
+ };
+ useEffect(()=>{
+  load();
+  const refresh=()=>load();
+  const timer=window.setInterval(refresh,60000);
+  window.addEventListener('focus',refresh);
+  window.addEventListener('timetable-published',refresh);
+  return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('timetable-published',refresh);};
+ },[endpoint]);
+ if(loading)return <section className="panel"><p role="status">Preparing your timetable from published student class schedules…</p></section>;
+ if(error)return <section className="panel"><p role="alert">{error}</p><button onClick={load}>Retry</button></section>;
+ return <>
+  <div className="section-heading"><div><h2>{title}</h2><p className="muted">{description}</p></div><button onClick={load}>Refresh</button></div>
+  {rows.length ? <WeeklyTimetable rows={rows} documents={documents} facultyView={endpoint==='/timetables/faculty'} onRefresh={load}/> : <section className="panel"><h3>No published classes yet</h3><p className="muted">Your timetable will appear automatically when the academic coordinator publishes a student timetable entry assigned to you.</p></section>}
+ </>;
 }
 
-// -----------------------------------------------------------------------------
-// COMPLETE OFFICIAL CSE SECTION 3 STUDENT ROSTER (INCLUDING 324103210170 to L19)
-// -----------------------------------------------------------------------------
-export const CSE_SECTION_3_STUDENTS = [
-  // Starting subset from user screenshot
-  { sno: 1, rollNo: '324103210127', name: 'Manchikanti alekhya', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 9, a3: 7 },
-  { sno: 2, rollNo: '324103210128', name: 'Manda sai likhitha', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 8, a3: 9 },
-  { sno: 3, rollNo: '324103210129', name: 'Mandadi niharika reddy', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 7, a2: 6, a3: 8 },
-  { sno: 4, rollNo: '324103210130', name: 'Manem sai priya', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 6, a2: 5, a3: 7 },
-  { sno: 5, rollNo: '324103210132', name: 'Matta richitha', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 9, a2: 9, a3: 8 },
-  { sno: 6, rollNo: '324103210133', name: 'Miriyala vishnu vardhani devi', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 9 },
-  { sno: 7, rollNo: '324103210134', name: 'Modumudi naga lakshmi sarva', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 7, a2: 8, a3: 7 },
-  { sno: 8, rollNo: '324103210135', name: 'Mohammad leenisha', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 9, a2: 9, a3: 9 },
-  { sno: 9, rollNo: '324103210136', name: 'Morla thanuja', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 7, a2: 7, a3: 8 },
-  { sno: 10, rollNo: '324103210137', name: 'Mounica sahu', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 9, a3: 8 },
-  { sno: 11, rollNo: '324103210138', name: 'Muddada gnaneswari', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 9 },
-  { sno: 12, rollNo: '324103210139', name: 'Mudunuri chetana pragnya', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 13, rollNo: '324103210140', name: 'Nagam jahanvi', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 7, a3: 8 },
-  { sno: 14, rollNo: '324103210141', name: 'Nagireddy pujitha', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 9 },
-  { sno: 15, rollNo: '324103210142', name: 'Nagulakonda sai siri', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 16, rollNo: '324103210143', name: 'Namballa chareeshma', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 7, a2: 8, a3: 8 },
-  { sno: 17, rollNo: '324103210144', name: 'Nambari pallavi', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 8, a3: 9 },
-  { sno: 18, rollNo: '324103210145', name: 'Nammi nomika', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 9, a3: 8 },
-  { sno: 19, rollNo: '324103210146', name: 'Navara moda sravya', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 7, a2: 7, a3: 8 },
-  { sno: 20, rollNo: '324103210147', name: 'Neelam mali', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 21, rollNo: '324103210148', name: 'Neelapu harika', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 9 },
-  { sno: 22, rollNo: '324103210149', name: 'Nemalipuri pavithra', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 7, a3: 8 },
-  { sno: 23, rollNo: '324103210150', name: 'Pallagani thanuja', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 9 },
-  { sno: 24, rollNo: '324103210151', name: 'Pallela laxmi prasanna', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 25, rollNo: '324103210152', name: 'Pampana raahithya', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 7, a2: 8, a3: 7 },
-  { sno: 26, rollNo: '324103210153', name: 'P.hemavallika', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 27, rollNo: '324103210154', name: 'Panduru lakshmi', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 8, a3: 8 },
-  { sno: 28, rollNo: '324103210155', name: 'Pantham lavanya ratna mahalakshmi', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 7, a3: 8 },
-  { sno: 29, rollNo: '324103210156', name: 'Pappu lakshmi durga', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 9 },
-  { sno: 30, rollNo: '324103210157', name: 'Anuradha parupalli', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 31, rollNo: '324103210158', name: 'Parvathi rekhaprasanna', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 9 },
-  { sno: 32, rollNo: '324103210159', name: 'Parveen begum', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 33, rollNo: '324103210160', name: 'Pasumarthi amrutha varshini', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 7, a2: 8, a3: 8 },
-  { sno: 34, rollNo: '324103210161', name: 'Peddada vagdevi chaitra', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 9 },
-  { sno: 35, rollNo: '324103210162', name: 'Peddinti madhuri', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 36, rollNo: '324103210163', name: 'Peddireddy mounika naga rani', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 37, rollNo: '324103210164', name: 'Pediredla sai nihitha', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 7, a3: 8 },
-  { sno: 38, rollNo: '324103210165', name: 'P. Hasini', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 9 },
-  { sno: 39, rollNo: '324103210166', name: 'Pemmaraju srinithya', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 9 },
-  { sno: 40, rollNo: '324103210167', name: 'Penmetsa sai pranathi', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 41, rollNo: '324103210168', name: 'P. Lasya varma', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 42, rollNo: '324103210169', name: 'Pilli thanmayee', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 7, a2: 8, a3: 7 },
-
-  // SPECIFIED BY USER: 324103210170 TO 325103210L19
-  { sno: 43, rollNo: '324103210170', name: 'Ponnaganti sravani', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 10, a2: 10, a3: 9 },
-  { sno: 44, rollNo: '324103210171', name: 'Poojitha illa', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 9, a2: 9, a3: 9 },
-  { sno: 45, rollNo: '324103210172', name: 'Poppoppu sai lakshmi aishwarya', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 8, a3: 9 },
-  { sno: 46, rollNo: '324103210173', name: 'Potta jhansi laxmi', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 9, a2: 8, a3: 8 },
-  { sno: 47, rollNo: '324103210174', name: 'Pulletikurthi sai santhoshi sri anusha', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 9, a2: 9, a3: 9 },
-  { sno: 48, rollNo: '324103210175', name: 'Punnana kalyani', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 9, a3: 8 },
-  { sno: 49, rollNo: '324103210176', name: 'Putta revathi', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 8, a3: 8 },
-  { sno: 50, rollNo: '324103210177', name: 'Rachamallu pujitha venkata naga', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 51, rollNo: '324103210178', name: 'Raparthi swarna keerthana', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 9 },
-  { sno: 52, rollNo: '324103210179', name: 'Reddy jyothi prasanna', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 7, a3: 8 },
-  { sno: 53, rollNo: '324103210180', name: 'Rejetj sireesha', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 9 },
-  { sno: 54, rollNo: '324103210181', name: 'Routhu vennela', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 55, rollNo: '324103210182', name: 'S deekshita', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 8, a3: 9 },
-  { sno: 56, rollNo: '324103210183', name: 'Sabah noor', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 9, a3: 8 },
-  { sno: 57, rollNo: '324103210184', name: 'Savarapu sarvajni', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 8, a3: 9 },
-  { sno: 58, rollNo: '324103210185', name: 'Seelam naga samhitha', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 8, a2: 8, a3: 7 },
-  { sno: 59, rollNo: '324103210186', name: 'Surada jahnavi', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 60, rollNo: '324103210187', name: 'Tale charishma', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 9, a3: 9 },
-  { sno: 61, rollNo: '324103210188', name: 'Tamalampudi annapurrna', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 9, a2: 8, a3: 8 },
-  { sno: 62, rollNo: '324103210189', name: 'Sruthitattikayala', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 8 },
-  { sno: 63, rollNo: '325103210L15', name: 'Marella sailu', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 8, a3: 9 },
-  { sno: 64, rollNo: '325103210L16', name: 'Molleti bhargavsri', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 9, a3: 8 },
-  { sno: 65, rollNo: '325103210L17', name: 'Narava saidurga', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 9, a2: 9, a3: 8 },
-  { sno: 66, rollNo: '325103210L18', name: 'Paila jayasree jasmin', sec: '3', room: 'L19', elective: 'Information Retrieved System (IRS)', a1: 8, a2: 8, a3: 9 },
-  { sno: 67, rollNo: '325103210L19', name: 'Paltasingi maithili', sec: '3', room: 'L19', elective: 'Microprocessors & Micro controllers', a1: 9, a2: 9, a3: 9 }
-];
-
-// August 2026 Academic Calendar Column Dates for Monthly Attendance
-const AUGUST_DAYS = [
-  '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
-  '11', '12', '13', '14', '17', '18', '19', '20', '21',
-  '24', '25', '26', '27', '28', '31'
-];
-
-// Static Holiday / No Class Days in August 2026
-const HOLIDAY_DAYS = ['7', '13', '21', '31'];
-
-// Generate deterministic daily attendance (P, A, -) for August 2026
-function getStudentAugustAttendance(student, index) {
-  const attendancePattern = {};
-  let present = 0;
-  let absent = 0;
-
-  AUGUST_DAYS.forEach((day, dIdx) => {
-    if (HOLIDAY_DAYS.includes(day)) {
-      attendancePattern[day] = '-';
-    } else {
-      // Deterministic realistic absent days matching screenshot
-      let isAbsent = false;
-      if (index === 0 && (day === '3' || day === '11')) isAbsent = true;
-      if (index === 1 && (day === '3' || day === '10' || day === '11')) isAbsent = true;
-      if (index === 2 && (day === '11')) isAbsent = true;
-      if (index === 3 && (day === '3' || day === '10' || day === '11' || day === '25' || day === '28')) isAbsent = true;
-      if (index === 4 && (day === '11')) isAbsent = true;
-      if (index === 5 && (day === '11')) isAbsent = true;
-      if (index === 6 && (day === '3' || day === '10' || day === '11')) isAbsent = true;
-      if (index === 7 && (day === '11')) isAbsent = true;
-      if (index === 8 && (day === '10')) isAbsent = true;
-      if (index === 9 && (day === '11')) isAbsent = true;
-      if (index > 9 && (dIdx % 11 === 0 || dIdx % 17 === 0) && day !== '1') isAbsent = true;
-
-      if (isAbsent) {
-        attendancePattern[day] = 'A';
-        absent++;
-      } else {
-        attendancePattern[day] = 'P';
-        present++;
-      }
-    }
-  });
-
-  const totalClasses = 24;
-  const pct = ((present / totalClasses) * 100).toFixed(2);
-  return { attendancePattern, present, absent, pct };
+function TimetableCards({active,onSelect}){
+ const cards=[['students','Student Timetable','View the complete published timetable that students see for every section you teach.'],['faculty','Faculty Timetable','View only your teaching periods, rooms, subjects, and sections.']];
+ return <section className="attendance-card-grid timetable-card-grid">{cards.map(([id,title,description])=><button type="button" key={id} className={'attendance-card '+(active===id?'attendance-card--active':'')} onClick={()=>onSelect(id)}><span className="attendance-card__tag">{id==='students'?'Class view':'My schedule'}</span><strong>{title}</strong><p>{description}</p><span className="attendance-card__action">View timetable →</span></button>)}</section>;
 }
 
-export function FacultyDashboard({ name = 'Dr. M. Lakshmi', activeTab = 'overview', onNavigate }) {
-  // Filters & State
-  const [selectedSection, setSelectedSection] = useState('cse_3'); // 'cse_1', 'cse_2', 'cse_3', 'cse_4', 'csm_1', 'csm_2', 'csc_1', 'ece_1', 'ece_2', 'eee_1', 'it_1'
-  const [filterMode, setFilterMode] = useState('all'); // 'all', 'irs', 'mpmc', 'subset_170'
-  const [activeCourse, setActiveCourse] = useState('IRS'); // 'IRS', 'MPMC', 'DAA'
-  const [showAllAssignments, setShowAllAssignments] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [leaveRequests, setLeaveRequests] = useState([]);
-  const [leaveLoading, setLeaveLoading] = useState(false);
-  const [leaveError, setLeaveError] = useState(false);
-  const [leaveActionId, setLeaveActionId] = useState('');
-  const [messageRequestId, setMessageRequestId] = useState('');
-  const [messageText, setMessageText] = useState('');
+function AssignmentCards({active,onSelect}){
+ const cards=[['enter','Enter Assignment Marks','Record or update the assignment score for your selected students.','Enter marks'],['view','View All Assignment Marks','Open the class assignment-mark register with totals and percentages.','View register']];
+ return <section className="attendance-card-grid timetable-card-grid">{cards.map(([id,title,description,action])=><button type="button" key={id} className={'attendance-card '+(active===id?'attendance-card--active':'')} onClick={()=>onSelect(id)}><span className="attendance-card__tag">{id==='enter'?'Marking':'Reports'}</span><strong>{title}</strong><p>{description}</p><span className="attendance-card__action">{action} →</span></button>)}</section>;
+}
 
-  const showNotice = (msg) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(prev => (prev === msg ? '' : prev)), 3500);
-  };
+function AssignmentMarksRegister({students,marks,subject,classAssignment}){
+ const assignmentMarks=new Map(marks.filter(mark=>mark.examination_type==='assignment').map(mark=>[mark.student_id,mark]));
+ return <section className="monthly-register assignment-register"><div className="monthly-register__head"><h3><span aria-hidden="true">▣</span>Assignment Marks{subject?' - '+subject.name:''}{classAssignment?' | '+classAssignment.department+' — Section '+classAssignment.section_name:''}</h3><button type="button" onClick={()=>window.print()}>Print Register</button></div><div className="portal-table monthly-register__table"><table><thead><tr><th>S.No.</th><th>Roll Number</th><th>Name</th>{[1,2,3].map(number=><th key={number}>Assignment {number}<br/><small>(10)</small></th>)}<th>Total<br/><small>(30)</small></th><th>%</th></tr></thead><tbody>{students.map((student,index)=>{
+  const mark=assignmentMarks.get(student.id),scores=Array.isArray(mark?.assignment_scores)&&mark.assignment_scores.length===3?mark.assignment_scores:null;
+  const total=scores?scores.reduce((sum,score)=>sum+Number(score??0),0):null;
+  const percent=total!==null?100*total/30:mark&&Number(mark.maximum_score)>0?100*Number(mark.score)/Number(mark.maximum_score):null;
+  return <tr key={student.id}><td>{index+1}</td><th scope="row">{student.roll_number}</th><td>{student.full_name||'—'}</td>{[0,1,2].map(position=><td key={position}>{scores?.[position]??'—'}</td>)}<td className="assignment-register__total">{total??'—'}</td><td className={percent===null?'':percent<75?'assignment-register__low':'assignment-register__good'}>{percent===null?'—':percent.toFixed(2)+'%'}</td></tr>;
+ })}{!students.length&&<tr><td colSpan="8">No students match your filters.</td></tr>}</tbody></table></div></section>;
+}
 
-  const loadLeaveRequests = async () => {
-    setLeaveLoading(true);
-    setLeaveError(false);
-    try {
-      const { data } = await facultyApi.get('/faculty/leave-requests', facultyApiConfig());
-      setLeaveRequests(data.requests || []);
-    } catch {
-      setLeaveError(true);
-      showNotice('Leave requests could not be loaded. Please refresh and try again.');
-    } finally {
-      setLeaveLoading(false);
-    }
-  };
+const leaveDate = value => {
+ const [year, month, day] = String(value || '').slice(0, 10).split('-');
+ return year && month && day ? `${Number(day)}/${Number(month)}/${year}` : '—';
+};
 
-  useEffect(() => {
-    if (activeTab === 'overview' || activeTab === 'Leave & Substitution') loadLeaveRequests();
-  }, [activeTab]);
+function StudentLeaveRequests({leaves, busy, onRefresh, onAction}){
+ const decide = (request, action) => {
+  const labels = { approved: 'Optional approval note:', rejected: 'Reason for rejecting this leave request:', message: 'What details do you need from the student?' };
+  const note = window.prompt(labels[action], '');
+  if (note !== null) onAction(request, action, note);
+ };
+ return <section className="leave-requests">
+  <header className="leave-requests__header">
+   <div><h3><span className="leave-requests__icon" aria-hidden="true"/>Student Leave Requests</h3><p>Review applications or ask the student for more details.</p></div>
+   <button type="button" className="leave-requests__refresh" onClick={onRefresh} disabled={busy}>Refresh</button>
+  </header>
+  <div className="leave-requests__list">
+   {leaves.length ? leaves.map(request => <article className={'leave-request leave-request--'+request.status} key={request.id}>
+    <div className="leave-request__topline"><p><strong>{request.student_name}</strong><span> · {request.roll_number} · Section {request.section}</span></p><span className="leave-request__status">{request.status}</span></div>
+    <p className="leave-request__summary"><strong>Leave:</strong> {leaveDate(request.start_date)} to {leaveDate(request.end_date)} <span>·</span> {request.reason}</p>
+    {request.status === 'pending' ? <div className="leave-request__actions">
+     <button type="button" className="leave-request__approve" disabled={busy} onClick={()=>decide(request,'approved')}>Approve</button>
+     <button type="button" className="leave-request__reject" disabled={busy} onClick={()=>decide(request,'rejected')}>Reject</button>
+     <button type="button" className="leave-request__details" disabled={busy} onClick={()=>decide(request,'message')}>Request Details</button>
+    </div> : <p className="leave-request__review"><strong>{request.status === 'approved' ? 'Approved' : 'Rejected'}.</strong>{request.reviewer_note ? ` ${request.reviewer_note}` : ''}</p>}
+   </article>) : <p className="leave-requests__empty">No leave requests are available for your assigned students.</p>}
+  </div>
+ </section>;
+}
 
-  const updateLeaveRequest = async (requestId, action, note = '') => {
-    setLeaveActionId(requestId);
-    try {
-      const { data } = await facultyApi.patch('/faculty/leave-requests/' + requestId, { action, note }, facultyApiConfig());
-      setLeaveRequests(prev => prev.map(item => item.id === requestId ? { ...item, ...data.request } : item));
-      setMessageRequestId('');
-      setMessageText('');
-      showNotice(action === 'message' ? 'Your message was sent to the student.' : `Leave request ${action}.`);
-    } catch (error) {
-      showNotice(error.response?.data?.message || 'The leave request could not be updated.');
-    } finally {
-      setLeaveActionId('');
-    }
-  };
+function AttendanceCards({active,onSelect}){
+ const cards=[['daily','Daily Attendance','Mark or update attendance for one class date.','Daily entry'],['weekly','Weekly Attendance','Review attendance across the selected Monday–Saturday week.','Weekly register'],['monthly','Monthly Attendance','View the full calendar register and printable totals.','Monthly register']];
+ return <section className="attendance-card-grid">{cards.map(([id,title,description,action])=><button type="button" key={id} className={'attendance-card '+(active===id?'attendance-card--active':'')} onClick={()=>onSelect(id)}><span className="attendance-card__tag">{id==='daily'?'Today':id==='weekly'?'This week':'This month'}</span><strong>{title}</strong><p>{description}</p><span className="attendance-card__action">{action} →</span></button>)}</section>;
+}
 
-  // Section configurations
-  const sectionMeta = {
-    cse_1: { name: 'CSE — Section 1', room: 'R-301', title: 'Design & Analysis of Algorithms', code: '24CT11RC18' },
-    cse_2: { name: 'CSE — Section 2', room: 'R-302', title: 'Design & Analysis of Algorithms', code: '24CT11RC18' },
-    cse_3: { name: 'CSE — Section 3', room: 'L19', title: 'Information Retrieved System (IRS)', code: '24CT11OE01' },
-    cse_4: { name: 'CSE — Section 4', room: 'R-304', title: 'Formal Languages & Automata', code: '24CT11RC20' },
-    csm_1: { name: 'CSM (AI & ML) — Section 1', room: 'R-201', title: 'Artificial Intelligence', code: '24AI11RC01' },
-    csm_2: { name: 'CSM (AI & ML) — Section 2', room: 'R-202', title: 'Artificial Intelligence', code: '24AI11RC01' },
-    csc_1: { name: 'CSC (Cyber Security) — Section 1', room: 'R-205', title: 'Information Security Fundamentals', code: '24CS11RC01' },
-    ece_1: { name: 'ECE — Section 1', room: 'R-101', title: 'Digital System Design', code: '24EC11RC17' },
-    ece_2: { name: 'ECE — Section 2', room: 'R-102', title: 'Digital System Design', code: '24EC11RC17' },
-    eee_1: { name: 'EEE — Section 1', room: 'R-108', title: 'Electrical Machines 2', code: '24EE11RC09' },
-    it_1: { name: 'IT — Section 1', room: 'R-305', title: 'Database Management Systems', code: '24CT11RC12' }
-  };
-
-  const curSec = sectionMeta[selectedSection] || sectionMeta.cse_3;
-
-  // Filtered Student List based on chosen view
-  const displayStudents = useMemo(() => {
-    let list = CSE_SECTION_3_STUDENTS;
-    if (filterMode === 'irs') {
-      list = list.filter(s => s.elective.includes('IRS'));
-    } else if (filterMode === 'mpmc') {
-      list = list.filter(s => s.elective.includes('Microprocessors'));
-    } else if (filterMode === 'subset_170') {
-      list = list.filter(s => s.rollNo >= '324103210170' || s.rollNo.includes('L'));
-    }
-    return list;
-  }, [filterMode]);
-
-  if (activeTab === 'overview') {
-    const assignmentCount = ['a1', 'a2', 'a3'].filter(key => CSE_SECTION_3_STUDENTS.some(student => student[key] != null)).length;
-    const pendingLeaves = leaveRequests.filter(request => request.status === 'pending').length;
-    return (
-      <div className="faculty-reference-overview">
-        <section className="stats faculty-reference-stats" aria-label="Faculty summary">
-          {[
-            { label: 'Attendance', value: CSE_SECTION_3_STUDENTS.length, note: 'Students in August register', icon: UserCheck, target: 'Attendance' },
-            { label: 'Assignments', value: assignmentCount, note: 'Assignments with marks', icon: BookMarked, target: 'Assignments' },
-            { label: 'Pending Leave Requests', value: leaveLoading ? '...' : leaveError ? 'Unavailable' : pendingLeaves, note: 'Awaiting your review', icon: MessageSquare, target: 'Leave & Substitution' },
-            { label: 'Class Students', value: CSE_SECTION_3_STUDENTS.length, note: 'CSE Section 3', icon: Users, target: 'Attendance' }
-          ].map(({ label, value, note, icon: Icon, target }, index) => (
-            <button type="button" className="stat-card faculty-reference-stat" key={label} onClick={() => onNavigate(target)}>
-              <span className={'icon ' + ['blue', 'green', 'orange', 'purple'][index]}><Icon aria-hidden="true" /></span>
-              <span className="faculty-reference-stat-copy"><span className="faculty-reference-label">{label}</span><strong>{value}</strong><small>{note}</small></span>
-            </button>
-          ))}
-        </section>
-        <section className="panel dashboard-home-actions">
-          <div className="panel-head"><div><h2>Today</h2><p className="muted">Choose a teaching task to continue. All other tools are in the menu.</p></div></div>
-          <div className="compact-action-list">
-            {[
-              ['My Timetable', 'View your teaching schedule, class periods, and rooms.'],
-              ['Attendance', 'Open your class register and review student attendance.'],
-              ['Assignments', 'Review assignment marks and student records.'],
-              ['Leave & Substitution', 'Review student leave requests and respond to applications.']
-            ].map(([title, description]) => <button type="button" className="compact-action" key={title} onClick={() => onNavigate(title)}><span>{title}</span><small>{description}</small></button>)}
-          </div>
-        </section>
-
-
-      </div>
-    );
-  }
-
-  return (
-    <div className="faculty-dashboard-root" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-      {/* Toast Notice */}
-      {notice && (
-        <div className="timetable-alert success no-print" style={{ animation: 'fadeIn 0.2s ease-in' }}>
-          <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{notice}</span>
-        </div>
-      )}
-
-      {/* Global Section & Elective Switcher Toolbar */}
-      <div style={{ background: '#ffffff', padding: '14px 20px', borderRadius: '10px', border: '1px solid #dce6f4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            Select Class Section:
-          </span>
-          <select
-            value={selectedSection}
-            onChange={e => setSelectedSection(e.target.value)}
-            style={{ padding: '6px 12px', borderRadius: '6px', border: '1.5px solid #087a62', background: '#f0fdf4', color: '#166534', fontWeight: '800', fontSize: '12.5px', cursor: 'pointer' }}
-          >
-            <option value="cse_1">CSE — Section 1 (Room: R-301)</option>
-            <option value="cse_2">CSE — Section 2 (Room: R-302)</option>
-            <option value="cse_3">CSE — Section 3 (Room: L19 • IRS / MPMC Elective)</option>
-            <option value="cse_4">CSE — Section 4 (Room: R-304)</option>
-            <option value="csm_1">CSM (AI & ML) — Section 1 (Room: R-201)</option>
-            <option value="csm_2">CSM (AI & ML) — Section 2 (Room: R-202)</option>
-            <option value="csc_1">CSC (Cyber Security) — Section 1 (Room: R-205)</option>
-            <option value="ece_1">ECE — Section 1 (Room: R-101)</option>
-            <option value="ece_2">ECE — Section 2 (Room: R-102)</option>
-            <option value="eee_1">EEE — Section 1 (Room: R-108)</option>
-            <option value="it_1">IT — Section 1 (Room: R-305)</option>
-          </select>
-          <span style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '800' }}>
-            3-1 Semester 2026-27 Odd Sem
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '700' }}>Filter View:</span>
-          <button
-            type="button"
-            onClick={() => setFilterMode('all')}
-            style={{ padding: '5px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: '700', border: '1px solid', cursor: 'pointer', background: filterMode === 'all' ? '#087a62' : '#ffffff', color: filterMode === 'all' ? '#ffffff' : '#334155', borderColor: filterMode === 'all' ? '#087a62' : '#cbd5e1' }}
-          >
-            All Students ({CSE_SECTION_3_STUDENTS.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterMode('subset_170')}
-            style={{ padding: '5px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: '700', border: '1px solid', cursor: 'pointer', background: filterMode === 'subset_170' ? '#087a62' : '#ffffff', color: filterMode === 'subset_170' ? '#ffffff' : '#334155', borderColor: filterMode === 'subset_170' ? '#087a62' : '#cbd5e1' }}
-          >
-            Roll 324103210170 to L19 ({CSE_SECTION_3_STUDENTS.filter(s => s.rollNo >= '324103210170' || s.rollNo.includes('L')).length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterMode('irs')}
-            style={{ padding: '5px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: '700', border: '1px solid', cursor: 'pointer', background: filterMode === 'irs' ? '#087a62' : '#ffffff', color: filterMode === 'irs' ? '#ffffff' : '#334155', borderColor: filterMode === 'irs' ? '#087a62' : '#cbd5e1' }}
-          >
-            IRS Elective ({CSE_SECTION_3_STUDENTS.filter(s => s.elective.includes('IRS')).length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterMode('mpmc')}
-            style={{ padding: '5px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: '700', border: '1px solid', cursor: 'pointer', background: filterMode === 'mpmc' ? '#087a62' : '#ffffff', color: filterMode === 'mpmc' ? '#ffffff' : '#334155', borderColor: filterMode === 'mpmc' ? '#087a62' : '#cbd5e1' }}
-          >
-            MPMC Elective ({CSE_SECTION_3_STUDENTS.filter(s => s.elective.includes('Microprocessors')).length})
-          </button>
-        </div>
-      </div>
-
-      {(activeTab === 'overview' || activeTab === 'Leave & Substitution') && (
-        <section style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #dce6f4', padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: '#fff7ed', color: '#c2410c', display: 'grid', placeItems: 'center' }}><MessageSquare className="w-4 h-4" /></div>
-              <div><h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>Student Leave Requests</h3><p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>Review applications or ask the student for more details.</p></div>
-            </div>
-            <button type="button" onClick={loadLeaveRequests} disabled={leaveLoading} style={{ border: '1px solid #cbd5e1', background: '#ffffff', color: '#334155', padding: '7px 10px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>{leaveLoading ? 'Loading...' : 'Refresh'}</button>
-          </div>
-          {leaveLoading && !leaveRequests.length ? <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>Loading leave requests...</p> : !leaveRequests.length ? <p style={{ margin: 0, padding: '16px', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '8px', fontSize: '13px' }}>No leave requests are waiting for review.</p> : (
-            <div style={{ display: 'grid', gap: '10px' }}>
-              {leaveRequests.map(request => {
-                const pending = request.status === 'pending';
-                const busy = leaveActionId === request.id;
-                return <article key={request.id} style={{ border: `1px solid ${pending ? '#fed7aa' : '#e2e8f0'}`, borderLeft: `4px solid ${pending ? '#f97316' : request.status === 'approved' ? '#10b981' : '#ef4444'}`, borderRadius: '8px', padding: '13px 14px', background: pending ? '#fffdf9' : '#ffffff' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}><div><strong style={{ color: '#0f172a', fontSize: '13px' }}>{request.student_name}</strong><span style={{ color: '#64748b', fontSize: '12px' }}> · {request.roll_number} · Section {request.section}</span><p style={{ margin: '6px 0 0', color: '#334155', fontSize: '12.5px' }}><b>Leave:</b> {new Date(request.start_date).toLocaleDateString()} to {new Date(request.end_date).toLocaleDateString()} · {request.reason}</p>{request.reviewer_note && <p style={{ margin: '5px 0 0', color: '#475569', fontSize: '12px' }}><b>Faculty note:</b> {request.reviewer_note}</p>}</div><span className={`status ${request.status}`} style={{ height: 'fit-content' }}>{request.status}</span></div>
-                  {pending && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '11px' }}><button type="button" disabled={busy} onClick={() => updateLeaveRequest(request.id, 'approved')} style={{ border: 0, background: '#087a62', color: '#ffffff', padding: '7px 11px', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>Approve</button><button type="button" disabled={busy} onClick={() => { const note = window.prompt('Reason for rejecting this leave request:'); if (note?.trim()) updateLeaveRequest(request.id, 'rejected', note.trim()); }} style={{ border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c', padding: '7px 11px', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>Reject</button><button type="button" disabled={busy} onClick={() => { setMessageRequestId(request.id); setMessageText(request.reviewer_note || ''); }} style={{ border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1d4ed8', padding: '7px 11px', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>Request Details</button></div>}
-                  {messageRequestId === request.id && <div style={{ display: 'grid', gap: '8px', marginTop: '10px' }}><textarea value={messageText} onChange={e => setMessageText(e.target.value)} placeholder="Ask the student for the information you need..." style={{ minHeight: '68px', padding: '9px', border: '1px solid #bfdbfe', borderRadius: '6px', resize: 'vertical', fontSize: '12px' }} /><div style={{ display: 'flex', gap: '8px' }}><button type="button" disabled={busy || !messageText.trim()} onClick={() => updateLeaveRequest(request.id, 'message', messageText.trim())} style={{ border: 0, background: '#2563eb', color: '#ffffff', padding: '7px 11px', borderRadius: '6px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}>Send Message</button><button type="button" onClick={() => { setMessageRequestId(''); setMessageText(''); }} style={{ border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569', padding: '7px 11px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button></div></div>}
-                </article>;
-              })}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* =========================================================================
-          1. ASSIGNMENT MARKS SECTION (MATCHING SCREENSHOT 1)
-          ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'Assignments') && (
-        <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #dce6f4', padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-          {/* Card Header with Green Icon */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-              <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#e6f8f0', color: '#087a62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BookMarked className="w-4 h-4" />
-              </div>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#087a62', letterSpacing: '0.2px' }}>
-                Assignment Marks - {curSec.title} | {curSec.name}
-              </h3>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '11.5px', color: '#64748b' }}>Room: <strong>{curSec.room}</strong></span>
-            </div>
-          </div>
-
-          {/* Assignment Table */}
-          <div className="overflow" style={{ borderTop: '1px solid #f1f5f9' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ background: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
-                  <th style={{ padding: '10px 8px', textAlign: 'center', width: '55px', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>S.No.</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', width: '130px', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>Roll Number</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>Name</th>
-                  <th style={{ padding: '10px 8px', textAlign: 'center', width: '110px', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>Assignment 1<br /><span style={{ fontWeight: 'normal', fontSize: '11px', color: '#64748b' }}>(10)</span></th>
-                  <th style={{ padding: '10px 8px', textAlign: 'center', width: '110px', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>Assignment 2<br /><span style={{ fontWeight: 'normal', fontSize: '11px', color: '#64748b' }}>(10)</span></th>
-                  <th style={{ padding: '10px 8px', textAlign: 'center', width: '110px', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>Assignment 3<br /><span style={{ fontWeight: 'normal', fontSize: '11px', color: '#64748b' }}>(10)</span></th>
-                  <th style={{ padding: '10px 8px', textAlign: 'center', width: '85px', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>Total<br /><span style={{ fontWeight: 'normal', fontSize: '11px', color: '#64748b' }}>(30)</span></th>
-                  <th style={{ padding: '10px 10px', textAlign: 'center', width: '85px', color: '#0f172a', fontWeight: '800', fontSize: '12px' }}>%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(showAllAssignments ? displayStudents : displayStudents.slice(0, 15)).map((s, idx) => {
-                  const total = s.a1 + s.a2 + s.a3;
-                  const pct = ((total / 30) * 100).toFixed(2);
-
-                  return (
-                    <tr key={s.rollNo} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.12s ease' }}>
-                      <td style={{ padding: '9px 8px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>{idx + 1}</td>
-                      <td style={{ padding: '9px 12px', fontWeight: '800', color: '#0f172a' }}>{s.rollNo}</td>
-                      <td style={{ padding: '9px 14px', color: '#1e293b', textTransform: 'lowercase' }}>
-                        <span style={{ textTransform: 'capitalize' }}>{s.name}</span>
-                      </td>
-                      <td style={{ padding: '9px 8px', textAlign: 'center', color: '#0f172a', fontWeight: '700' }}>{s.a1}</td>
-                      <td style={{ padding: '9px 8px', textAlign: 'center', color: '#0f172a', fontWeight: '700' }}>{s.a2}</td>
-                      <td style={{ padding: '9px 8px', textAlign: 'center', color: '#0f172a', fontWeight: '700' }}>{s.a3}</td>
-                      <td style={{ padding: '9px 8px', textAlign: 'center', fontWeight: '800', color: '#0f172a' }}>{total}</td>
-                      <td style={{ padding: '9px 10px', textAlign: 'center', fontWeight: '800', color: Number(pct) >= 75 ? '#087a62' : '#dc2626' }}>{pct}%</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Bottom Right: View All Link */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-            <button
-              type="button"
-              onClick={() => setShowAllAssignments(!showAllAssignments)}
-              style={{ border: 0, background: 'transparent', color: '#087a62', fontWeight: '800', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              {showAllAssignments ? 'Collapse Assignment List ↑' : `View All Assignment Marks (${displayStudents.length} Students) →`}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          2. MONTHLY ATTENDANCE MATRIX (MATCHING SCREENSHOT 2)
-          ========================================================================= */}
-      {(activeTab === 'overview' || activeTab === 'Attendance') && (
-        <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #dce6f4', padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-          {/* Card Header with Green Calendar Icon */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-              <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: '#e6f8f0', color: '#087a62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Calendar className="w-4 h-4" />
-              </div>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#087a62', letterSpacing: '0.2px' }}>
-                Monthly Attendance - {curSec.title} | {curSec.name} | Room: {curSec.room} | August 2026
-              </h3>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                className="timetable-btn"
-                style={{ background: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', fontSize: '11.5px' }}
-                onClick={() => window.print()}
-              >
-                <Printer className="w-3.5 h-3.5 mr-1 inline" /> Print Register
-              </button>
-            </div>
-          </div>
-
-          {/* Month Matrix Table */}
-          <div className="overflow" style={{ borderTop: '1px solid #f1f5f9', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '1050px' }}>
-              <thead>
-                <tr style={{ background: '#ffffff', borderBottom: '1.5px solid #cbd5e1' }}>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '40px', color: '#0f172a', fontWeight: '800' }}>S.No.</th>
-                  <th style={{ padding: '8px 8px', textAlign: 'left', width: '110px', color: '#0f172a', fontWeight: '800' }}>Roll Number</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'left', minWidth: '160px', color: '#0f172a', fontWeight: '800' }}>Name</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', color: '#0f172a', fontWeight: '800' }}>Sec</th>
-                  {AUGUST_DAYS.map(d => (
-                    <th key={d} style={{ padding: '8px 2px', textAlign: 'center', width: '22px', color: '#0f172a', fontWeight: '700', fontSize: '11px', background: HOLIDAY_DAYS.includes(d) ? '#f8fafc' : '#ffffff' }}>
-                      {d}
-                    </th>
-                  ))}
-                  <th style={{ padding: '8px 6px', textAlign: 'center', width: '55px', color: '#0f172a', fontWeight: '800' }}>Present</th>
-                  <th style={{ padding: '8px 6px', textAlign: 'center', width: '55px', color: '#0f172a', fontWeight: '800' }}>Absent</th>
-                  <th style={{ padding: '8px 8px', textAlign: 'center', width: '60px', color: '#0f172a', fontWeight: '800' }}>%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayStudents.map((s, idx) => {
-                  const { attendancePattern, present, absent, pct } = getStudentAugustAttendance(s, idx);
-
-                  return (
-                    <tr key={s.rollNo} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '7px 4px', textAlign: 'center', color: '#64748b', fontWeight: '600' }}>{idx + 1}</td>
-                      <td style={{ padding: '7px 8px', fontWeight: '800', color: '#0f172a' }}>{s.rollNo}</td>
-                      <td style={{ padding: '7px 10px', color: '#1e293b', whiteSpace: 'nowrap' }}>
-                        <span style={{ textTransform: 'capitalize' }}>{s.name}</span>
-                      </td>
-                      <td style={{ padding: '7px 4px', textAlign: 'center', color: '#475569', fontWeight: '700' }}>{s.sec}</td>
-
-                      {AUGUST_DAYS.map(d => {
-                        const status = attendancePattern[d];
-                        return (
-                          <td
-                            key={d}
-                            style={{
-                              padding: '7px 2px',
-                              textAlign: 'center',
-                              fontWeight: '800',
-                              fontSize: '11.5px',
-                              color: status === 'P' ? '#15803d' : status === 'A' ? '#dc2626' : '#94a3b8',
-                              background: status === 'A' ? '#fff5f5' : 'transparent'
-                            }}
-                          >
-                            {status}
-                          </td>
-                        );
-                      })}
-
-                      <td style={{ padding: '7px 6px', textAlign: 'center', fontWeight: '800', color: '#0f172a' }}>{present}</td>
-                      <td style={{ padding: '7px 6px', textAlign: 'center', fontWeight: '800', color: absent > 0 ? '#dc2626' : '#0f172a' }}>{absent}</td>
-                      <td style={{ padding: '7px 8px', textAlign: 'center', fontWeight: '800', color: Number(pct) >= 75 ? '#087a62' : '#dc2626' }}>{pct}%</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Bottom Legend & Total Classes Conducted Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', flexWrap: 'wrap', gap: '10px', fontSize: '12.5px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#15803d', fontWeight: '800' }}>
-                <strong style={{ fontSize: '13px' }}>P</strong> - Present
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#dc2626', fontWeight: '800' }}>
-                <strong style={{ fontSize: '13px' }}>A</strong> - Absent
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#64748b', fontWeight: '700' }}>
-                <strong style={{ fontSize: '13px' }}>-</strong> Holiday / No Class
-              </span>
-            </div>
-
-            <div style={{ fontWeight: '800', color: '#087a62', fontSize: '13px' }}>
-              Total Classes Conducted : 24
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          OTHER FACULTY SECTIONS (TIMETABLE, CORRECTIONS, SUBSTITUTIONS)
-          ========================================================================= */}
-      {activeTab === 'My Timetable' && (
-        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '10px', border: '1px solid #dce6f4' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 12px', color: '#0f172a' }}>
-            CSE Section 3 Weekly Teaching Schedule
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderLeft: '4px solid #087a62', borderRadius: '8px', padding: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', background: '#ffffff', padding: '2px 6px', borderRadius: '4px' }}>MONDAY • P2</span>
-                <span style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>09:30 AM - 10:20 AM</span>
-              </div>
-              <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: '#0f172a', fontWeight: '800' }}>Information Retrieved System (IRS)</h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Section: <strong>CSE-3</strong> • Room: <strong>L19</strong></p>
-            </div>
-
-            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderLeft: '4px solid #087a62', borderRadius: '8px', padding: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', background: '#ffffff', padding: '2px 6px', borderRadius: '4px' }}>TUESDAY • P3</span>
-                <span style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>10:20 AM - 11:10 AM</span>
-              </div>
-              <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: '#0f172a', fontWeight: '800' }}>Information Retrieved System (IRS)</h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Section: <strong>CSE-3</strong> • Room: <strong>L19</strong></p>
-            </div>
-
-            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderLeft: '4px solid #087a62', borderRadius: '8px', padding: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', background: '#ffffff', padding: '2px 6px', borderRadius: '4px' }}>THURSDAY • P1</span>
-                <span style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>08:40 AM - 09:30 AM</span>
-              </div>
-              <h4 style={{ margin: '0 0 4px', fontSize: '14px', color: '#0f172a', fontWeight: '800' }}>Information Retrieved System (IRS)</h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Section: <strong>CSE-3</strong> • Room: <strong>L19</strong></p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+export function FacultyDashboard({name,activeTab='overview',onNavigate,items=[]}){
+ const [data,setData]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ const [subject,setSubject]=useState(''),[room,setRoom]=useState(''),[date,setDate]=useState(()=>new Date().toLocaleDateString('en-CA')),[section,setSection]=useState(''),[search,setSearch]=useState('');
+ const [attendanceView,setAttendanceView]=useState(''),[timetableView,setTimetableView]=useState(''),[assignmentView,setAssignmentView]=useState('view');
+ const [attendanceLoading,setAttendanceLoading]=useState(false),[attendance,setAttendance]=useState({}),[scores,setScores]=useState({}),[examType,setExamType]=useState('mid_1'),[maximum,setMaximum]=useState('30');
+ const [assignment,setAssignment]=useState({title:'',description:'',deadline:''}),[submissions,setSubmissions]=useState(null),[leaves,setLeaves]=useState([]),[announcementTargets,setAnnouncementTargets]=useState([]);
+ const [request,setRequest]=useState({kind:'correction',details:''}),[announcement,setAnnouncement]=useState({title:'',description:'',departmentId:'',sectionId:''});
+ const load=async()=>{
+  try{setError('');const [r,l]=await Promise.all([api.get('/faculty/workspace'),api.get('/faculty/leave-requests')]);setData(r.data);setLeaves(l.data.requests);const first=r.data.classAssignments?.[0];setSection(current=>current||first?.section_id||'');setSubject(current=>current||first?.subject_id||'');setRoom(current=>current||r.data.classrooms[0]?.id||'');}
+  catch(e){setError(errorMessage(e));}
+ };
+ useEffect(()=>{
+  load();
+  const refresh=()=>load();
+  const timer=window.setInterval(refresh,60000);
+  window.addEventListener('focus',refresh);
+  window.addEventListener('timetable-published',refresh);
+  return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('timetable-published',refresh);};
+ },[]);
+ useEffect(()=>{if(activeTab==='Attendance')setAttendanceView('');},[activeTab]);
+ useEffect(()=>{if(activeTab==='My Timetable')setTimetableView('');},[activeTab]);
+ useEffect(()=>{if(activeTab==='Assignments')setAssignmentView('view');},[activeTab]);
+ useEffect(()=>{setAssignment(current=>({...current,sectionId:section}));},[section]);
+ const loadAnnouncementTargets=async()=>{
+  try{const response=await api.get('/faculty/announcement-targets');const targets=response.data.targets||[];setAnnouncementTargets(targets);setAnnouncement(current=>{const first=targets[0];return first&&!current.departmentId?{...current,departmentId:first.department_id,sectionId:first.section_id}:current;});}
+  catch(e){setError(errorMessage(e));}
+ };
+ useEffect(()=>{if(activeTab==='Class Announcements')loadAnnouncementTargets();},[activeTab]);
+ useEffect(()=>{
+  setAttendance({});
+  if(!subject){setAttendanceLoading(false);return;}
+  let active=true;setAttendanceLoading(true);
+  if(!section){setAttendanceLoading(false);return;}api.get('/faculty/attendance',{params:{subjectId:subject,sectionId:section,date}}).then(r=>{if(active)setAttendance(Object.fromEntries(r.data.attendance.map(x=>[x.student_id,x.status])));}).catch(e=>{if(active)setError(errorMessage(e));}).finally(()=>{if(active)setAttendanceLoading(false);});
+  return()=>{active=false;};
+ },[subject,section,date]);
+ useEffect(()=>{
+  const marks=(data?.marks||[]).filter(x=>x.subject_id===subject&&x.examination_type===examType);
+  setScores(Object.fromEntries(marks.map(x=>[x.student_id,String(x.score)])));
+  setMaximum(String(marks[0]?.maximum_score||30));
+ },[data,subject,examType]);
+ async function act(fn,text='Changes saved.'){setBusy(true);setError('');setNotice('');try{await fn();await load();setNotice(text);}catch(e){setError(errorMessage(e));}finally{setBusy(false);}}
+ if(!data)return <section className="panel"><p role={error?'alert':'status'}>{error||'Loading your teaching workspace…'}</p>{error&&<button onClick={()=>{setError('');load();}}>Retry</button>}</section>;
+ const students=data.students.filter(x=>(!subject||x.subject_ids?.includes(subject))&&(!section||x.academic_section_id===section)&&(!search||(x.roll_number+' '+x.full_name).toLowerCase().includes(search.toLowerCase())));
+ const studentName=id=>data.students.find(s=>s.id===id)?.full_name||'Student';
+ const announcementDepartments=[...new Map(announcementTargets.map(target=>[target.department_id,target.department])).entries()].map(([id,label])=>({id,label}));
+ const announcementSections=announcementTargets.filter(target=>target.department_id===announcement.departmentId);
+ const selectors=<div className="portal-form"><label>Assigned class / section<select value={section} onChange={e=>{const next=e.target.value;setSection(next);setSubject(data.classAssignments.find(item=>item.section_id===next)?.subject_id||'');}}><option value="">Choose assigned class</option>{[...new Map(data.classAssignments.map(item=>[item.section_id,item])).values()].map(item=><option key={item.section_id} value={item.section_id}>{item.department} · Year {item.year_number} · Section {item.section_name}</option>)}</select></label><label>Subject<select value={subject} onChange={e=>setSubject(e.target.value)}><option value="">Choose subject</option>{data.classAssignments.filter(item=>!section||item.section_id===section).map(item=><option key={item.id} value={item.subject_id}>{item.code} — {item.subject}</option>)}</select></label><label>Search students<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Name or roll number"/></label></div>;
+ let content;
+ if(activeTab==='overview')content=<>{selectors}<StudentLeaveRequests leaves={leaves} busy={busy} onRefresh={load} onAction={(leave,action,note)=>act(()=>api.patch('/faculty/leave-requests/'+leave.id,{action,note}),'Leave request updated.')}/><AssignmentMarksRegister students={students} marks={data.marks.filter(mark=>mark.subject_id===subject)} subject={data.subjects.find(item=>item.id===subject)} classAssignment={data.classAssignments.find(item=>item.section_id===section&&item.subject_id===subject)}/></>;
+ else if(activeTab==='My Profile')content=<><h2>My Profile</h2><p>{name}</p><p>Employee code: {data.profile.employee_code}</p><p>Department: {data.profile.department||'Not assigned'}</p><p>{data.profile.email}</p></>;
+ else if(activeTab==='My Subjects')content=<DataTable columns={['Course code','Subject']} rows={data.subjects.map(s=>[s.code,s.name])}/>;
+ else if(activeTab==='My Classes')content=<><h2>My assigned classes</h2><p className="muted">Classes assigned by the Academic Coordinator.</p><section className="attendance-card-grid timetable-card-grid">{data.classAssignments.map(item=><button type="button" className="attendance-card" key={item.id} onClick={()=>{setSection(item.section_id);setSubject(item.subject_id);onNavigate('My Students');}}><span className="attendance-card__tag">{item.department} · Year {item.year_number}</span><strong>{item.department}-{item.section_name}</strong><p>{item.code} · {item.subject}</p><span className="attendance-card__action">{item.students} Students →</span></button>)}</section>{!data.classAssignments.length&&<p className="muted">No class assignments are active for your account.</p>}</>;
+ else if(activeTab==='My Timetable')content=<><TimetableCards active={timetableView} onSelect={setTimetableView}/>{timetableView==='students'&&<PublishedTimetable endpoint="/timetables/faculty/student-view" fallbackEndpoint="/timetables/faculty" title="Student Timetable" description="Published class schedules for the sections you teach, including periods handled by other faculty."/>}{timetableView==='faculty'&&<PublishedTimetable endpoint="/timetables/faculty" title="Faculty Timetable" description="Your teaching schedule generated automatically from published student timetables."/>}</>;
+ else if(activeTab==='Attendance')content=!attendanceView?<><AttendanceCards active={attendanceView} onSelect={setAttendanceView}/><UploadedAttendance/></>:<><div className="section-heading"><div><h2>{attendanceView[0].toUpperCase()+attendanceView.slice(1)} Attendance</h2><p className="muted">Choose the subject, section, and students for this attendance register.</p></div><button type="button" onClick={()=>setAttendanceView('')}>← Back to attendance views</button></div>{selectors}{attendanceView==='daily'&&<section className="daily-attendance"><h3>Daily attendance entry</h3><div className="portal-form"><label>Date<input type="date" required value={date} onChange={e=>setDate(e.target.value)}/></label><label>Classroom<select value={room} onChange={e=>setRoom(e.target.value)}><option value="">Choose classroom</option>{data.classrooms.map(x=><option key={x.id} value={x.id}>{x.room_code}</option>)}</select></label></div><p className="muted">Choose a status for each student you want to record. Existing records are shown for the selected date.</p><DataTable columns={['Roll number','Student','Section','Status']} rows={students.map(x=>[x.roll_number,x.full_name,x.section,<select disabled={attendanceLoading} aria-label={'Attendance for '+x.roll_number} value={attendance[x.id]||''} onChange={e=>setAttendance({...attendance,[x.id]:e.target.value})}><option value="">Not recorded</option><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option></select>])}/><button disabled={busy||attendanceLoading||!subject||!room||!students.some(s=>attendance[s.id])} onClick={()=>act(()=>api.post('/faculty/attendance',{subjectId:subject,classroomId:room,date,entries:students.filter(s=>attendance[s.id]).map(s=>({studentId:s.id,status:attendance[s.id]}))}),'Attendance saved to student records.')}>Save daily attendance</button></section>}{attendanceView==='weekly'&&<WeeklyAttendance sectionId={section} subjectId={subject} subject={data.subjects.find(item=>item.id===subject)} students={students} refreshKey={data}/>} {attendanceView==='monthly'&&<MonthlyAttendance sectionId={section} classAssignment={data.classAssignments.find(item=>item.section_id===section&&item.subject_id===subject)} classroom={data.classrooms.find(item=>item.id===room)} subjectId={subject} subject={data.subjects.find(item=>item.id===subject)} students={students} refreshKey={data}/>}</>;
+ else if(activeTab==='Marks')content=<>{selectors}<div className="portal-form"><label>Assessment<select value={examType} onChange={e=>setExamType(e.target.value)}>{['assignment','internal','mid_1','mid_2','semester'].map(x=><option key={x} value={x}>{x.replaceAll('_',' ')}</option>)}</select></label><label>Maximum marks<input type="number" min="1" max="1000" value={maximum} onChange={e=>setMaximum(e.target.value)}/></label></div><DataTable columns={['Roll number','Student','Score']} rows={students.map(x=>[x.roll_number,x.full_name,<input aria-label={'Marks for '+x.roll_number} type="number" min="0" max={maximum} step="0.01" value={scores[x.id]??''} onChange={e=>setScores({...scores,[x.id]:e.target.value})}/>])}/><button disabled={busy||!subject||!students.some(s=>scores[s.id]!==undefined&&scores[s.id]!=='')} onClick={()=>act(()=>api.post('/faculty/marks',{subjectId:subject,type:examType,maximum:Number(maximum),entries:students.filter(s=>scores[s.id]!==undefined&&scores[s.id]!=='').map(s=>({studentId:s.id,score:Number(scores[s.id])}))}),'Marks saved to student records.')}>Save marks</button></>;
+ else if(activeTab==='Assignments')content=<><AssignmentCards active={assignmentView} onSelect={view=>{setAssignmentView(view);if(view==='enter')setExamType('assignment');}}/>{assignmentView&&selectors}{assignmentView==='enter'&&<><h3>Enter Assignment Marks</h3><div className="portal-form"><label>Maximum marks<input type="number" min="1" max="1000" value={maximum} onChange={e=>setMaximum(e.target.value)}/></label></div><DataTable columns={['Roll number','Student','Score']} rows={students.map(x=>[x.roll_number,x.full_name,<input aria-label={'Assignment marks for '+x.roll_number} type="number" min="0" max={maximum} step="0.01" value={scores[x.id]??''} onChange={e=>setScores({...scores,[x.id]:e.target.value})}/>])}/><button disabled={busy||!subject||!students.some(student=>scores[student.id]!==undefined&&scores[student.id]!=='')} onClick={()=>act(()=>api.post('/faculty/marks',{subjectId:subject,type:'assignment',maximum:Number(maximum),entries:students.filter(student=>scores[student.id]!==undefined&&scores[student.id]!=='').map(student=>({studentId:student.id,score:Number(scores[student.id])}))}),'Assignment marks saved.')}>Save assignment marks</button><form className="portal-form" onSubmit={e=>{e.preventDefault();act(async()=>{await api.post('/faculty/assignments',{...assignment,subjectId:subject,deadline:new Date(assignment.deadline).toISOString()});setAssignment({title:'',description:'',deadline:''});},'Assignment published.');}}><label>Assignment title<input required maxLength={200} value={assignment.title} onChange={e=>setAssignment({...assignment,title:e.target.value})}/></label><label>Instructions<textarea maxLength={10000} value={assignment.description} onChange={e=>setAssignment({...assignment,description:e.target.value})}/></label><label>Deadline<input required type="datetime-local" value={assignment.deadline} onChange={e=>setAssignment({...assignment,deadline:e.target.value})}/></label><button disabled={busy||!subject}>Publish assignment</button></form></>}{assignmentView==='view'&&<AssignmentMarksRegister students={students} marks={data.marks.filter(mark=>mark.subject_id===subject)} subject={data.subjects.find(item=>item.id===subject)} classAssignment={data.classAssignments.find(item=>item.section_id===section&&item.subject_id===subject)}/>}</>;
+ else if(activeTab==='My Students')content=<>{selectors}<DataTable columns={['Roll number','Student','Department','Section']} rows={students.map(x=>[x.roll_number,x.full_name,x.department,x.section])}/></>;
+ else if(activeTab==='Student Performance'||activeTab==='Academic Reports')content=<>{selectors}<h3>Recorded assessment results</h3><DataTable columns={['Student','Assessment','Score','Maximum','Percentage']} rows={data.marks.filter(x=>(!subject||x.subject_id===subject)&&students.some(s=>s.id===x.student_id)).map(x=>[studentName(x.student_id),x.examination_type,x.score,x.maximum_score,(100*Number(x.score)/Number(x.maximum_score)).toFixed(1)+'%'])}/><button onClick={()=>window.print()}>Print results</button></>;
+ else if(activeTab==='Leave & Substitution'||activeTab==='Attendance Corrections')content=<>{activeTab==='Leave & Substitution'&&<StudentLeaveRequests leaves={leaves} busy={busy} onRefresh={load} onAction={(leave,action,note)=>act(()=>api.patch('/faculty/leave-requests/'+leave.id,{action,note}),'Leave request updated.')}/>}
+ <h3>Request an academic coordinator review</h3><form className="portal-form" onSubmit={e=>{e.preventDefault();act(async()=>{await api.post('/faculty/requests',request);setRequest({...request,details:''});},'Request sent for coordinator review.');}}><label>Request type<select value={request.kind} onChange={e=>setRequest({...request,kind:e.target.value})}><option value="correction">Attendance correction</option><option value="substitution">Leave / substitution</option></select></label><label>Details<textarea required minLength={10} maxLength={4000} value={request.details} onChange={e=>setRequest({...request,details:e.target.value})}/></label><button disabled={busy}>Submit request</button></form><DataTable columns={['Type','Details','Status','Review note']} rows={data.requests.map(x=>[x.kind,x.details,x.status,x.reviewer_note])}/></>;
+ else if(activeTab==='Class Announcements')content=<form className="portal-form" onSubmit={e=>{e.preventDefault();act(async()=>{await api.post('/notices',{...announcement,category:'academic'});setAnnouncement(current=>({...current,title:'',description:''}));},'Announcement published for the selected class.');}}><label>Department<select required value={announcement.departmentId} onChange={e=>{const departmentId=e.target.value;const first=announcementTargets.find(target=>target.department_id===departmentId);setAnnouncement({...announcement,departmentId,sectionId:first?.section_id||''});}}><option value="">Choose department</option>{announcementDepartments.map(department=><option key={department.id} value={department.id}>{department.label}</option>)}</select></label><label>Section<select required value={announcement.sectionId} onChange={e=>setAnnouncement({...announcement,sectionId:e.target.value})} disabled={!announcement.departmentId}><option value="">Choose section</option>{announcementSections.map(target=><option key={target.section_id} value={target.section_id}>Year {target.year_number} · Sem {target.semester_number} · Section {target.section_name} ({target.academic_year})</option>)}</select></label><label>Title<input required maxLength={200} value={announcement.title} onChange={e=>setAnnouncement({...announcement,title:e.target.value})}/></label><label>Announcement<textarea required maxLength={10000} value={announcement.description} onChange={e=>setAnnouncement({...announcement,description:e.target.value})}/></label><p className="muted">Only students in the selected department and section will receive this announcement.</p><button disabled={busy||!announcement.departmentId||!announcement.sectionId}>Publish announcement</button></form>;
+ else content=<p>Select a teaching task from the menu.</p>;
+ return <section className="panel portal-workspace">{error&&<p role="alert" className="error">{error}</p>}{notice&&<p className="portal-notice" role="status">{notice}</p>}{content}</section>;
 }

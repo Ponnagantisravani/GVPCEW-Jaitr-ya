@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { env } from "../config/env.js";
 
 function getClient() {
@@ -22,4 +22,8 @@ export function putPrivateImage(key, body, contentType) {
 
 export function getPrivateImage(key) {
   return getClient().send(new GetObjectCommand({ Bucket: env.s3Bucket, Key: key }));
+}
+
+export function deletePrivateImage(key) {
+  return getClient().send(new DeleteObjectCommand({ Bucket: env.s3Bucket, Key: key }));
 }

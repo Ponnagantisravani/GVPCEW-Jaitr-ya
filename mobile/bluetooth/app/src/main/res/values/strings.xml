@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">BLE Attendance Prototype</string>
+    <string name="student_mode">Student Mode</string>
+    <string name="coordinator_mode">Coordinator Mode</string>
+    <string name="student_id">Student ID (e.g. 23CSE001)</string>
+    <string name="start_attendance">Start Attendance</string>
+    <string name="stop">Stop</string>
+    <string name="start_scan">Start Scan</string>
+    <string name="detected">Detected students (this scan)</string>
+    <string name="empty">No students detected yet.</string>
+    <string name="ready">Choose a mode. Keep both apps open and screens on during testing.</string>
+</resources>

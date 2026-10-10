@@ -1,0 +1,27 @@
+.automatic-timetable {padding:20px; border:1px solid currentColor; border-radius:12px; margin:16px 0; color:inherit;}
+.automatic-timetable label {display:block; margin:12px 0;}
+.automatic-timetable input,.automatic-timetable textarea,.automatic-timetable select {display:block; width:100%; padding:10px; background:var(--card-bg,transparent); color:inherit; border:1px solid #89949e; border-radius:6px;}
+.automatic-timetable textarea {font-family:monospace;}
+.automatic-timetable button {margin:8px 8px 8px 0;}
+.generator-scroll {overflow-x:auto;}
+.automatic-timetable table {border-collapse:collapse; min-width:1100px; width:100%;}
+.automatic-timetable td,.automatic-timetable th {border:1px solid #89949e; padding:9px; text-align:center; font-size:12px;}
+.generator-class-teacher {text-align:right;}
+.generator-fields {display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;}
+.automatic-timetable fieldset {border:1px solid #89949e;border-radius:8px;padding:16px;margin:18px 0;min-width:0;}
+.automatic-timetable legend {font-weight:700;}
+.automatic-timetable button {cursor:pointer;padding:9px 14px;}
+.automatic-timetable button:disabled {opacity:.5;cursor:default;}
+.automatic-timetable .generator-subject {background:hsl(var(--subject-hue) 65% 92%);color:#17212b;}
+[data-theme="dark"] .automatic-timetable .generator-subject,.dark .automatic-timetable .generator-subject {background:hsl(var(--subject-hue) 35% 22%);color:#f2f5f9;}
+.automatic-timetable article {margin:28px 0;}
+@media (prefers-color-scheme:dark) {
+ .automatic-timetable:not([data-theme="light"]) {color-scheme:dark;}
+ .automatic-timetable .generator-subject {background:hsl(var(--subject-hue) 35% 22%);color:#f2f5f9;}
+}
+[data-theme="light"] .automatic-timetable .generator-subject {background:hsl(var(--subject-hue) 65% 92%);color:#17212b;}
+.generator-required {padding:14px 18px;border:1px solid #c98b30;border-radius:8px;margin:16px 0;background:rgba(201,139,48,.1);}
+.generator-required ul {margin:8px 0;padding-left:22px;}
+.generator-field-error {display:block;margin-top:6px;color:#b33c2d;font-size:13px;}
+.automatic-timetable input[aria-invalid="true"] {border:2px solid #c45d48;}
+[data-theme="dark"] .generator-field-error,.dark .generator-field-error {color:#ffad9c;}

@@ -1,11 +1,11 @@
-import { Router } from "express";
+import { Router } from '../utils/router.js';
 import path from "path";
 import crypto from "crypto";
 import sharp from "sharp";
 import { z } from "zod";
 import { pool } from "../config/db.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { putPrivateImage } from "../utils/objectStorage.js";
+import { deletePrivateImage, putPrivateImage } from "../utils/objectStorage.js";
 import { requireEnrollmentKey } from "../middleware/datasetAuth.js";
 
 export const enrollmentRouter = Router();
@@ -50,7 +50,7 @@ function decodeDataUrl(dataUrl) {
   return buffer.length ? { extension, buffer } : null;
 }
 
-async function saveCapturedImages(client, studentId, rollNumber, capturedImages = []) {
+async function saveCapturedImages(client, studentId, rollNumber, capturedImages = [], createdStorageKeys) {
   const safeRollNumber = sanitizePathPart(rollNumber);
   const savedImages = [];
   for (const [index, image] of capturedImages.entries()) {
@@ -72,6 +72,7 @@ async function saveCapturedImages(client, studentId, rollNumber, capturedImages 
     const fileName = `${sourceName}.${extension}`;
     const storageKey = `dataset/${safeRollNumber}/${checksum}.${extension}`;
     await putPrivateImage(storageKey, decoded.buffer, metadata.format === "png" ? "image/png" : "image/jpeg");
+    createdStorageKeys.push(storageKey);
     const inserted = await client.query(
       `insert into dataset_images (student_id, roll_number, original_name, storage_key, checksum, content_type, byte_size)
        values ($1, $2, $3, $4, $5, $6, $7)
@@ -84,7 +85,7 @@ async function saveCapturedImages(client, studentId, rollNumber, capturedImages 
   return savedImages;
 }
 
-enrollmentRouter.post("/lookup", asyncHandler(async (req, res) => {
+enrollmentRouter.post("/lookup", requireEnrollmentKey, asyncHandler(async (req, res) => {
   const parsed = lookupSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: "Invalid roll number" });
@@ -115,6 +116,12 @@ enrollmentRouter.post("/lookup", asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Student not found" });
   }
 
+  await pool.query(
+    `insert into enrollment_audit_log(student_id, operation, source_ip, user_agent, metadata)
+     values($1, 'lookup', $2::inet, $3, $4::jsonb)`,
+    [student.student_id, req.ip || null, String(req.get('user-agent') || '').slice(0, 512) || null, JSON.stringify({ rollNumber })]
+  );
+
   res.json({ student });
 }));
 
@@ -139,6 +146,7 @@ enrollmentRouter.post("/upload", requireEnrollmentKey, asyncHandler(async (req, 
     metadata = {}
   } = parsed.data;
   const client = await pool.connect();
+  const createdStorageKeys = [];
 
   try {
     await client.query("begin");
@@ -206,7 +214,7 @@ enrollmentRouter.post("/upload", requireEnrollmentKey, asyncHandler(async (req, 
       return res.status(409).json({ message: "Student is already enrolled" });
     }
 
-    const savedImages = await saveCapturedImages(client, student.id, rollNumber, capturedImages);
+    const savedImages = await saveCapturedImages(client, student.id, rollNumber, capturedImages, createdStorageKeys);
 
     const enrollmentMetadata = {
       ...metadata,
@@ -218,7 +226,7 @@ enrollmentRouter.post("/upload", requireEnrollmentKey, asyncHandler(async (req, 
       captured_image_count: sampleCount,
       processed_image_count: processedImageCount ?? sampleCount,
       enrollment_timestamp: enrolledAt || new Date().toISOString(),
-      reference_images: parsed.data.referenceImages || savedImages.map((image) => image.fileName),
+      reference_images: parsed.data.referenceImages || savedImages.map((image) => image.original_name),
       uploaded_images: savedImages.map(({ id, original_name, checksum }) => ({ id, originalName: original_name, checksum }))
     };
 
@@ -232,6 +240,13 @@ enrollmentRouter.post("/upload", requireEnrollmentKey, asyncHandler(async (req, 
       }), "face_recognition_v1"]
     );
 
+    await client.query("update students set face_enrollment_status='completed',face_enrolled_at=now() where id=$1",[student.id]);
+    await client.query(
+      `insert into enrollment_audit_log(student_id, operation, source_ip, user_agent, metadata)
+       values($1, 'upload', $2::inet, $3, $4::jsonb)`,
+      [student.id, req.ip || null, String(req.get('user-agent') || '').slice(0, 512) || null,
+       JSON.stringify({ rollNumber, sampleCount, capturedImageCount: capturedImages.length, processedImageCount: processedImageCount ?? sampleCount })]
+    );
     await client.query("commit");
 
     res.status(201).json({
@@ -252,6 +267,7 @@ enrollmentRouter.post("/upload", requireEnrollmentKey, asyncHandler(async (req, 
     });
   } catch (error) {
     await client.query("rollback");
+    await Promise.allSettled(createdStorageKeys.map(key => deletePrivateImage(key)));
     console.error("Enrollment transaction error:", error);
     return res.status(500).json({
       message: "Database transaction failed while saving enrollment"

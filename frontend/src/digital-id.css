@@ -1,0 +1,584 @@
+/* Official GVPCEW Student Digital ID Card Styling — Compact Edition */
+
+.digital-id-container {
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.id-help {
+  margin: 0 0 12px;
+  color: #475569;
+  font-size: 12.5px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.id-card-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.id-toolbar-left,
+.id-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.id-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.id-tool-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.upload-photo-btn {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.upload-photo-btn:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
+}
+
+.print-card-btn {
+  background: #0096c7;
+  border-color: #0077b6;
+  color: #ffffff;
+}
+
+.print-card-btn:hover {
+  background: #0077b6;
+  color: #ffffff;
+}
+
+.calendar-btn-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.calendar-btn-subtle:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.calendar-notice-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ID Card Stage & Container Queries */
+.id-card-stage {
+  width: 100%;
+  container-type: inline-size;
+  display: flex;
+  justify-content: center;
+}
+
+/* Master Official ID Card — Compact Badge Dimensions */
+.official-gvpcew-id-card {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  aspect-ratio: 1.586 / 1;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 80, 120, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  border: 1px solid #bce2ee;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Top Institutional Header */
+.official-gvpcew-header {
+  background: #0096c7;
+  padding: 8px 14px;
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  border-top-left-radius: 13px;
+  border-top-right-radius: 13px;
+}
+
+.official-gvpcew-emblem-wrap {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.official-gvpcew-emblem {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+}
+
+.official-gvpcew-titles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.official-gvpcew-inst-name {
+  margin: 0;
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  font-size: clamp(12.5px, 3.8cqi, 18px);
+  font-weight: 800;
+  color: #ffd000;
+  letter-spacing: 0.3px;
+  line-height: 1.15;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.official-gvpcew-college-name {
+  margin: 1px 0;
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  font-size: clamp(7.5px, 2.1cqi, 10.5px);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+
+.official-gvpcew-affiliation {
+  margin: 0;
+  font-size: clamp(6px, 1.6cqi, 8.5px);
+  color: #f0f9ff;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.official-gvpcew-accreditation {
+  margin: 1px 0 0;
+  font-size: clamp(5.5px, 1.4cqi, 7.5px);
+  color: #e0f2fe;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+/* Card Main Body */
+.official-gvpcew-body {
+  flex: 1;
+  background: #ffffff;
+  padding: 10px 14px 6px;
+  display: grid;
+  grid-template-columns: 102px 1fr;
+  gap: 14px;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+/* Left Photo Column */
+.official-gvpcew-photo-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.official-gvpcew-photo-btn {
+  width: 100%;
+  aspect-ratio: 3.1 / 4;
+  max-height: 138px;
+  border: 1.2px solid #1e293b;
+  border-radius: 3px;
+  padding: 0;
+  background: #f8fafc;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.official-gvpcew-student-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.official-gvpcew-photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.official-gvpcew-photo-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 3px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.official-gvpcew-photo-btn:hover .official-gvpcew-photo-overlay {
+  opacity: 1;
+}
+
+/* Right Information Column */
+.official-gvpcew-info-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.official-gvpcew-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3.5px;
+}
+
+.official-gvpcew-row {
+  display: grid;
+  grid-template-columns: 46px 10px 1fr;
+  align-items: baseline;
+  font-size: clamp(10px, 2.5cqi, 12.5px);
+  line-height: 1.22;
+}
+
+.official-gvpcew-field-label {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.official-gvpcew-colon {
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+}
+
+.official-gvpcew-field-value {
+  font-weight: 750;
+  color: #003882;
+  overflow-wrap: anywhere;
+}
+
+.student-name-value {
+  font-weight: 800;
+  color: #003882;
+  letter-spacing: 0.1px;
+  text-transform: uppercase;
+}
+
+.section-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.official-gvpcew-shield-watermark {
+  width: 12px;
+  height: 12px;
+  color: #93c5fd;
+  opacity: 0.5;
+}
+
+.roll-no-row {
+  margin-top: 1px;
+}
+
+.student-roll-value {
+  font-weight: 800;
+  color: #0f172a;
+  font-size: clamp(10.5px, 2.7cqi, 13.5px);
+  letter-spacing: 0.3px;
+}
+
+/* Bottom Barcode & Signature */
+.official-gvpcew-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 3px;
+  padding-top: 1px;
+}
+
+.official-gvpcew-barcode-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.id-barcode-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.id-barcode-svg {
+  width: clamp(75px, 20cqi, 105px);
+  height: clamp(16px, 3.6cqi, 20px);
+  display: block;
+}
+
+.id-barcode-text {
+  font-family: "Courier New", Courier, monospace, sans-serif;
+  font-size: clamp(6.5px, 1.35cqi, 8.5px);
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-top: 0.5px;
+}
+
+.official-gvpcew-signature-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 55px;
+}
+
+.official-gvpcew-signature-img {
+  height: clamp(18px, 4.2cqi, 26px);
+  width: auto;
+  max-width: 65px;
+  object-fit: contain;
+  display: block;
+}
+
+.official-gvpcew-principal-label {
+  font-size: clamp(5.5px, 1.1cqi, 7px);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.4px;
+  margin-top: 0.5px;
+}
+
+/* Bottom Institutional Footer */
+.official-gvpcew-footer {
+  background: #0096c7;
+  padding: 6px 14px;
+  display: grid;
+  grid-template-columns: 50px 1fr 50px;
+  align-items: center;
+  box-sizing: border-box;
+  border-bottom-left-radius: 13px;
+  border-bottom-right-radius: 13px;
+}
+
+.official-gvpcew-footer-branch {
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  font-size: clamp(11.5px, 3cqi, 15px);
+  font-weight: 800;
+  color: #ffd000;
+  text-align: left;
+  letter-spacing: 0.4px;
+}
+
+.official-gvpcew-footer-center {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5px;
+}
+
+.official-gvpcew-footer-address {
+  margin: 0;
+  font-size: clamp(6.5px, 1.6cqi, 8.5px);
+  font-weight: 600;
+  color: #001f3f;
+  line-height: 1.15;
+}
+
+.official-gvpcew-footer-contact {
+  margin: 0;
+  font-size: clamp(6px, 1.45cqi, 8px);
+  font-weight: 600;
+  color: #001f3f;
+  line-height: 1.15;
+}
+
+.official-gvpcew-footer-inst-code {
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  font-size: clamp(10.5px, 2.7cqi, 14px);
+  font-weight: 800;
+  color: #001f3f;
+  text-align: right;
+  letter-spacing: 0.4px;
+}
+
+/* Back Side of the Card */
+.official-gvpcew-id-card.back .official-gvpcew-header.back-header {
+  padding: 8px 14px;
+  display: block;
+}
+
+.official-gvpcew-back-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.official-gvpcew-back-title {
+  color: #ffd000;
+  font-weight: 800;
+  font-size: clamp(8.5px, 2cqi, 11px);
+  letter-spacing: 0.4px;
+}
+
+.official-gvpcew-back-pin {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: clamp(7.5px, 1.6cqi, 9.5px);
+}
+
+.official-gvpcew-body.back-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 14px 6px;
+}
+
+.official-gvpcew-back-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+  font-size: clamp(8px, 1.8cqi, 10px);
+  color: #1e293b;
+}
+
+.official-gvpcew-back-grid .span-full {
+  grid-column: span 2;
+}
+
+.blood-group-badge {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.official-gvpcew-instructions-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: clamp(7px, 1.4cqi, 8.5px);
+  color: #475569;
+  line-height: 1.3;
+  margin: 3px 0;
+}
+
+.official-gvpcew-instructions-box strong {
+  color: #0f172a;
+}
+
+.official-gvpcew-instructions-box ol {
+  margin: 1px 0 0;
+  padding-left: 12px;
+}
+
+.official-gvpcew-back-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: clamp(7px, 1.45cqi, 9px);
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 3px;
+}
+
+.shield-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #059669;
+  font-weight: 700;
+}
+
+/* Print Optimization — Standard 85.6mm x 53.98mm ID Badge */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .official-gvpcew-id-card,
+  .official-gvpcew-id-card * {
+    visibility: visible !important;
+  }
+  .official-gvpcew-id-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 85.6mm;
+    height: 53.98mm;
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+    border: 1px solid #0096c7;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

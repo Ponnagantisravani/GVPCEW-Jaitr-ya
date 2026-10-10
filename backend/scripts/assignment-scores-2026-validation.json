@@ -1,0 +1,204 @@
+{
+  "sourceRows": 278,
+  "matched": 240,
+  "missing": [
+    {
+      "roll": "324103210044",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210045",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210046",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210047",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210048",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210049",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210050",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210051",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210052",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210053",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L01",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L02",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L03",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L05",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L06",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L07",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L08",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L09",
+      "section": "1",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L10",
+      "section": "2",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L11",
+      "section": "2",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L12",
+      "section": "2",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L13",
+      "section": "2",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L14",
+      "section": "2",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L29",
+      "section": "2",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L20",
+      "section": "3",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L21",
+      "section": "3",
+      "subject": "IRS"
+    },
+    {
+      "roll": "325103210L30",
+      "section": "3",
+      "subject": "IRS"
+    },
+    {
+      "roll": "324103210236",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "324103210237",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "324103210238",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "324103210239",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "325103210L22",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "325103210L23",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "325103210L24",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "325103210L25",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "325103210L26",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "325103210L27",
+      "section": "4",
+      "subject": "CN"
+    },
+    {
+      "roll": "325103210L28",
+      "section": "4",
+      "subject": "CN"
+    }
+  ],
+  "sectionMismatches": 79,
+  "matchedByScreenshotSection": {
+    "1": 51,
+    "2": 64,
+    "3": 67,
+    "4": 58
+  },
+  "blankCells": 66
+}

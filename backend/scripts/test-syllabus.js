@@ -32,6 +32,12 @@ try {
   const base = `http://127.0.0.1:${server.address().port}/api/syllabi`;
   const tokens = Object.fromEntries(['student', 'faculty', 'academic_coordinator'].map(role => [role, jwt.sign({ sub: users[0].id, roles: [role] }, env.jwtSecret, { expiresIn: '5m' })]));
   async function request(role, path = '', method = 'GET', data) {
+    // Authorization reads current database roles, not the JWT role claim.
+    // These assignments are contained in the outer rollback transaction.
+    if (role) {
+      await client.query('delete from user_roles where user_id=$1', [users[0].id]);
+      await client.query('insert into user_roles(user_id,role) values($1,$2)', [users[0].id, role]);
+    }
     return fetch(base + path, { method, headers: { 'Content-Type': 'application/json', ...(role ? { Authorization: `Bearer ${tokens[role]}` } : {}) }, body: data ? JSON.stringify(data) : undefined });
   }
   const course = { code: 'TEST01', category: 'PC', title: 'Integration test course', l: '3', p: '0', internal: '30', external: '70', total: '100', credits: '3', units: 'UNIT I\nTest contents' };

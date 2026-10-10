@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import jwt from 'jsonwebtoken';
+process.env.DATABASE_URL='postgresql://test:test@127.0.0.1/test';
+process.env.JWT_SECRET='test-only-secret-with-at-least-32-characters';
+const {pool}=await import('../src/config/db.js');
+const {env}=await import('../src/config/env.js');
+const {createApp}=await import('../src/app.js');
+test('reminder feed is authenticated, scoped to the current account, and validates future reminders',async t=>{
+ const userId='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+ const queries=[];
+ const original=pool.query;
+ pool.query=async(sql,values)=>{
+  if(sql.includes('user_roles'))return {rows:[{id:userId,roles:['student']}]};
+  queries.push({sql,values});
+  return {rows:[],rowCount:0};
+ };
+ const server=createApp().listen(0,'127.0.0.1');
+ await new Promise(resolve=>server.once('listening',resolve));
+ t.after(async()=>{await new Promise(resolve=>server.close(resolve));pool.query=original;await pool.end();});
+ const base=`http://127.0.0.1:${server.address().port}/api/notifications`;
+ const headers={Authorization:'Bearer '+jwt.sign({sub:userId},env.jwtSecret,{expiresIn:'1m'}),'Content-Type':'application/json'};
+ assert.equal((await fetch(base+'/mobile-feed')).status,401);
+ const response=await fetch(base+'/mobile-feed',{headers});
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).reminders,[]);
+ assert.equal(queries.length,3);
+ assert.ok(queries.every(q=>q.values[0]===userId));
+ const post=body=>fetch(base,{method:'POST',headers,body:JSON.stringify(body)});
+ assert.equal((await post({title:'Class',body:'Go to class',scheduledFor:'2000-01-01T00:00:00Z'})).status,400);
+ assert.equal((await post({title:'Class',body:'Go to class',scheduledFor:'not a date'})).status,400);
+ const scheduledFor=new Date(Date.now()+3600000).toISOString();
+ assert.equal((await post({title:'Class',body:'Go to class',scheduledFor,userId:'someone-else'})).status,201);
+ assert.deepEqual(queries.at(-1).values,[userId,'Class','Go to class',scheduledFor]);
+});

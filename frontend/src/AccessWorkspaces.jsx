@@ -1,0 +1,33 @@
+import React,{useEffect,useState} from 'react';
+import {api} from './api.js';
+import {sectionLabel} from './PublicationAudience.jsx';
+const failure=e=>e.response?.data?.message||'Unable to load this information. Please retry.';
+export function MyFaculty(){
+ const [rows,setRows]=useState([]),[error,setError]=useState('');
+ useEffect(()=>{api.get('/students/faculty').then(({data})=>setRows(data.faculty)).catch(e=>setError(failure(e)));},[]);
+ return <section><h2>My Faculty</h2>{error&&<p role="alert">{error}</p>}<Rows columns={ [['full_name','Faculty'],['code','Course'],['subject','Subject']]} rows={rows}/></section>;
+}
+function Rows({columns,rows}){return rows.length?<div style={{overflowX:'auto'}}><table><thead><tr>{columns.map(([key,label])=><th key={key}>{label}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={row.id||i}>{columns.map(([key])=><td key={key}>{String(row[key]??'—')}</td>)}</tr>)}</tbody></table></div>:<p>No records in your assigned scope.</p>;}
+export function ScopeSummary({role}){
+ const [context,setContext]=useState(null),[error,setError]=useState('');
+ useEffect(()=>{let alive=true;api.get('/auth/context').then(({data})=>{if(alive)setContext(data);}).catch(e=>{if(alive)setError(failure(e));});return()=>{alive=false;};},[role]);
+ return <div className="panel" style={{marginBottom:16}}>{error?<p role="alert">{error}</p>:context?<><strong>{role.replaceAll('_',' ')} access</strong><p>{context.institutionWide?'Institution-wide responsibility':context.departments.map(d=>d.name).join(', ')||'No department responsibility assigned'}</p>{context.sections.length>0&&<details><summary>{context.sections.length} assigned classes</summary>{context.sections.map(s=><p key={s.id}>{sectionLabel(s)}</p>)}</details>}</>:<p>Loading your assigned scope…</p>}</div>;
+}
+export function AccessResponsibilities(){
+ const [data,setData]=useState(null),[selected,setSelected]=useState(''),[form,setForm]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ async function load(){try{const r=await api.get('/admin/access-responsibilities');setData(r.data);setError('');}catch(e){setError(failure(e));}}
+ useEffect(()=>{load();},[]);
+ function choose(id){setSelected(id);const u=data.users.find(x=>x.id===id);setForm(u?{departmentIds:u.department_ids,sectionIds:u.section_ids,institutionWide:u.institution_wide,active:u.active}:null);setNotice('');}
+ const user=data?.users.find(u=>u.id===selected);
+ function toggle(key,id,checked){setForm(f=>({...f,[key]:checked?[...f[key],id]:f[key].filter(x=>x!==id)}));}
+ async function save(e){e.preventDefault();setBusy(true);setError('');try{await api.put('/admin/access-responsibilities/'+selected,form);setNotice('Responsibilities and account status saved.');await load();}catch(e){setError(failure(e));}finally{setBusy(false);}}
+ return <section><h2>Responsibilities & account status</h2><p>Assign coordinator roles in User Management, then select their departments or classes here.</p>{error&&<p role="alert">{error} <button onClick={load}>Retry</button></p>}{notice&&<p role="status">{notice}</p>}{data&&<><label>Account<select value={selected} onChange={e=>choose(e.target.value)} disabled={busy}><option value="">Choose an account</option>{data.users.map(u=><option value={u.id} key={u.id}>{u.full_name} ({u.email})</option>)}</select></label>{form&&<form onSubmit={save}><p>Roles: {user.roles.join(', ')}</p><label><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Account active</label>{user.roles.includes('academic_coordinator')&&<fieldset><legend>Academic responsibility</legend><label><input type="checkbox" checked={form.institutionWide} onChange={e=>setForm({...form,institutionWide:e.target.checked})}/> Explicit institution-wide access</label>{data.departments.map(d=><label key={d.id} style={{display:'block'}}><input type="checkbox" checked={form.departmentIds.includes(d.id)} onChange={e=>toggle('departmentIds',d.id,e.target.checked)}/>{d.name}</label>)}</fieldset>}{user.roles.includes('student_coordinator')&&<fieldset><legend>Assigned classes</legend>{data.sections.map(s=><label key={s.id} style={{display:'block'}}><input type="checkbox" checked={form.sectionIds.includes(s.id)} onChange={e=>toggle('sectionIds',s.id,e.target.checked)}/>{sectionLabel(s)}</label>)}</fieldset>}<button disabled={busy}>{busy?'Saving…':'Save responsibilities'}</button></form>}</>}</section>;
+}
+export function CoordinatorWorkspace({title}){
+ const [data,setData]=useState(null),[error,setError]=useState(''),[section,setSection]=useState(''),[profile,setProfile]=useState(null);
+ async function load(){try{setData((await api.get('/coordinator/workspace')).data);setError('');}catch(e){setError(failure(e));}}
+ useEffect(()=>{load();},[]);
+ const rows=key=>(data?.[key]||[]).filter(r=>!section||r.academic_section_id===section);
+ const labels=[['roll_number','Roll number'],['full_name','Student']];
+ return <section><h2>{title}</h2>{error&&<p role="alert">{error}</p>}<button onClick={load}>Refresh</button>{data&&<><label>Class<select value={section} onChange={e=>{setSection(e.target.value);setProfile(null);}}><option value="">All assigned classes</option>{data.sections.map(s=><option key={s.id} value={s.id}>{sectionLabel(s)}</option>)}</select></label>{title==='Class Students'?<><Rows columns={labels} rows={rows('students')}/><label>Student profile<select defaultValue="" onChange={async e=>{setProfile(null);if(e.target.value)try{setProfile((await api.get('/coordinator/students/'+e.target.value)).data.student);}catch(err){setError(failure(err));}}}><option value="">Choose a student</option>{rows('students').map(s=><option key={s.id} value={s.id}>{s.roll_number} · {s.full_name}</option>)}</select></label>{profile&&<p>{profile.full_name} · {profile.roll_number} · {sectionLabel(profile)}</p>}</>:title==='Class Attendance'?<Rows columns={[...labels,['subject','Subject'],['classes','Classes'],['present','Present'],['percentage','Attendance %']]} rows={rows('attendance')}/>:title==='Class Performance'?<Rows columns={[...labels,['subject','Subject'],['examination_type','Assessment'],['score','Score'],['maximum_score','Maximum']]} rows={rows('marks')}/>:title==='Class Assignments'?<Rows columns={ [['title','Assignment'],['subject','Subject'],['description','Instructions'],['deadline','Deadline']]} rows={data.assignments.filter(a=>!section||a.academic_section_ids.includes(section))}/>:<Rows columns={ [['department','Department'],['year_number','Year'],['semester_number','Semester'],['section_name','Section'],['academic_year','Academic year']]} rows={data.sections.filter(s=>!section||s.id===section)}/>}</>}</section>;
+}

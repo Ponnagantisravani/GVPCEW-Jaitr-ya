@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:orientation="vertical" android:padding="20dp"
+    android:background="#F5F7F6">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="GVPCEW / ATTENDANCE" android:textSize="12sp" android:textColor="#00695C"
+        android:letterSpacing="0.08" android:paddingBottom="8dp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Bluetooth session" android:textSize="28sp" android:textStyle="bold"
+        android:textColor="#19273A" android:paddingBottom="8dp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Choose a role. Keep both phones nearby and this screen open. Discovery does not verify attendance."
+        android:textSize="14sp" android:textColor="#5B6977" android:paddingBottom="16dp" />
+    <RadioGroup android:id="@+id/modes" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:checkedButton="@id/studentMode" android:orientation="horizontal">
+        <RadioButton android:id="@+id/studentMode" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="wrap_content" android:text="@string/student_mode" />
+        <RadioButton android:id="@+id/coordinatorMode" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="wrap_content" android:text="@string/coordinator_mode" />
+    </RadioGroup>
+    <EditText android:id="@+id/studentId" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:hint="@string/student_id"
+        android:inputType="textCapCharacters" android:singleLine="true"
+        android:importantForAutofill="no" />
+    <Button android:id="@+id/start" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="@string/start_attendance"
+        android:backgroundTint="#00695C" android:textColor="#FFFFFF" android:textAllCaps="false" android:minHeight="52dp" />
+    <Button android:id="@+id/stop" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="@string/stop" android:enabled="false"
+        android:textAllCaps="false" android:minHeight="48dp" />
+    <TextView android:id="@+id/status" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="@string/ready"
+        android:paddingTop="12dp" android:paddingBottom="12dp" android:accessibilityLiveRegion="polite" />
+    <TextView android:id="@+id/listTitle" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="@string/detected" android:visibility="gone" />
+    <TextView android:id="@+id/empty" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="@string/empty" android:visibility="gone" />
+    <ListView android:id="@+id/students" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:visibility="gone" />
+</LinearLayout>

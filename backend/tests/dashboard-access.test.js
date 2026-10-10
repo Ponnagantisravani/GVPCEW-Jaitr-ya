@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import jwt from 'jsonwebtoken';
+process.env.DATABASE_URL='postgresql://test:test@127.0.0.1/test';
+process.env.JWT_SECRET='test-only-secret-with-at-least-32-characters';
+const {pool}=await import('../src/config/db.js');
+const {env}=await import('../src/config/env.js');
+const {createApp}=await import('../src/app.js');
+test('current server roles gate every dashboard and active dashboard cannot inherit other role privileges',async t=>{
+ const userId='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+ let roles=['student'];let queries=[];
+ const ownSection='bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',ownDepartment='cccccccc-cccc-cccc-cccc-cccccccccccc';
+ const original=pool.query;
+ pool.query=async(sql,values)=>{
+  if(sql.includes('array_agg(r.role)'))return {rows:[{id:userId,role:'student',roles}]};
+  if(sql.startsWith('select x.department_id,x.id academic_section_id from student_coordinator_sections r'))return {rows:!values[1]||values[1]===ownSection?[{department_id:ownDepartment,academic_section_id:ownSection}]:[]};
+  if(sql.startsWith('select 1 from academic_sections'))return {rows:[{}],rowCount:1};
+  queries.push({sql,values});return {rows:[{total:0}]};
+ };
+ const server=createApp().listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
+ t.after(async()=>{await new Promise(resolve=>server.close(resolve));pool.query=original;await pool.end();});
+ const base=`http://127.0.0.1:${server.address().port}/api`;
+ // A token's old admin claim must never grant current admin access.
+ const token=jwt.sign({sub:userId,roles:['admin','faculty','student']},env.jwtSecret,{expiresIn:'1m'});
+ const get=(path,role)=>fetch(base+path,{headers:{Authorization:'Bearer '+token,...(role?{'X-Portal-Role':role}:{})}});
+ for(const role of ['admin','faculty','academic_coordinator','student_coordinator'])assert.equal((await get('/dashboard?role='+role,role)).status,403);
+ assert.equal(queries.length,0);
+ for(const path of ['/users','/management/catalog','/faculty/workspace','/timetables/coordinator'])assert.equal((await get(path,'student')).status,403);
+ roles=['admin','faculty','student'];
+ assert.equal((await get('/users','student')).status,403);
+ assert.equal((await get('/faculty/workspace','student')).status,403);
+ assert.equal((await get('/dashboard?role=admin','student')).status,403);
+ assert.equal((await get('/dashboard?role=student','student')).status,200);
+ assert.ok(queries.every(q=>q.values[0]===userId&&q.values[1]==='student'));
+ queries=[];
+ for(const path of ['/subjects','/timetable','/notices'])assert.equal((await get(path,'faculty')).status,200);
+ assert.ok(queries.every(q=>q.values[0]===userId&&q.values[1]==='faculty'));
+ roles=['student'];
+ assert.equal((await get('/users','admin')).status,403);
+ roles=['student_coordinator'];queries=[];
+ const announce=body=>fetch(base+'/notices',{method:'POST',headers:{Authorization:'Bearer '+token,'X-Portal-Role':'student_coordinator','Content-Type':'application/json'},body:JSON.stringify(body)});
+ assert.equal((await announce({title:'Class update',description:'Details',departmentId:ownDepartment,sectionId:'dddddddd-dddd-dddd-dddd-dddddddddddd'})).status,403);
+ assert.equal(queries.length,0);
+ assert.equal((await announce({title:'Class update',description:'Details'})).status,201);
+ assert.deepEqual(queries.at(-1).values.slice(-2),[ownDepartment,ownSection]);
+});

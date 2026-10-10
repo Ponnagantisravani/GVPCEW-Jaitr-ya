@@ -1,0 +1,25 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GVPCEW automatic attendance preview</title>
+<style>
+body{font:16px system-ui;margin:0;background:#eef4f2;color:#12352b}main{max-width:1100px;margin:auto;padding:20px}h1{margin-top:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:white;border-radius:16px;padding:18px;box-shadow:0 4px 18px #12352b18}button{padding:10px 14px;border:0;border-radius:8px;background:#1769e0;color:white;margin:4px;cursor:pointer}button:disabled{opacity:.45}.danger{color:#a40000}.ok{color:#087443}.log{min-height:90px;background:#f4f7f6;padding:10px;border-radius:8px;white-space:pre-wrap}@media(max-width:700px){.grid{grid-template-columns:1fr}main{padding:12px}}
+</style>
+<main>
+<h1>Automatic attendance preview</h1>
+<p>This simulates two phones in one browser. It does not access Bluetooth or verify a real face.</p>
+<div class="grid">
+<section class="card"><h2>Coordinator phone</h2><p id="coordState">No class open</p><button id="open">Open class</button><button id="close" disabled>Close class</button><h3>Received students</h3><div id="received">None</div></section>
+<section class="card"><h2>Student phone</h2><p>Roll number: <b>324103210170</b></p><p id="studentState">Waiting for an open class</p><button id="start" disabled>Start face capture</button><div id="actions"></div><button id="retry" disabled>Retry capture</button></section>
+</div><h2>Event log</h2><div class="log" id="log"></div>
+</main>
+<script>
+const $=id=>document.getElementById(id), roll='324103210170';let session=null,step=0,accepted=false;
+const write=m=>{$('log').textContent=new Date().toLocaleTimeString()+' '+m+'\n'+$('log').textContent};
+function render(){ $('open').disabled=!!session;$('close').disabled=!session;$('start').disabled=!session||accepted; $('retry').disabled=!session; $('coordState').textContent=session?'Class open · challenge expires in 90 seconds':'No class open';$('studentState').textContent=accepted?'Attendance recorded':session?'Bluetooth link ready':'Waiting for an open class';$('received').textContent=accepted?'✅ '+roll+' · verified face + liveness · recorded once':'None'; }
+$('open').onclick=()=>{session={id:crypto.randomUUID(),expires:Date.now()+90000};accepted=false;step=0;write('Coordinator opened a face + Bluetooth class session.');render()};
+$('close').onclick=()=>{session=null;step=0;write('Coordinator closed the class. New captures are rejected.');render();$('actions').replaceChildren()};
+$('start').onclick=()=>{if(!session)return;step=0;write('Student requested a short liveness challenge.');showAction();};
+$('retry').onclick=()=>{if(session){step=0;accepted=false;write('Student started a fresh challenge.');showAction();render()}};
+function showAction(){if(!session||Date.now()>session.expires){write('Rejected: class or challenge expired.');return}const expected=['Look straight','Turn left','Turn right','Look straight'][step];$('actions').innerHTML='<p>Required movement: <b>'+expected+'</b></p><button id="correct">Simulate correct camera result</button><button id="wrong">Simulate wrong result</button>';$('correct').onclick=()=>{step++;if(step<4)showAction();else{accepted=true;write('Verified identity + liveness. Attendance recorded once.');$('actions').innerHTML='<p class="ok">✅ Verified and recorded.</p>';render()}};$('wrong').onclick=()=>{write('Rejected: liveness movement did not match. No attendance recorded.');$('actions').innerHTML='<p class="danger">Capture rejected. Use Retry capture.</p>';render()}}
+render();
+</script>

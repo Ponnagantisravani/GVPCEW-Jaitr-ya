@@ -1,0 +1,15 @@
+<resources>
+    <style name="Theme.Gvpcew" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">#00695C</item>
+        <item name="colorPrimaryVariant">#004D40</item>
+        <item name="colorSecondary">#00695C</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#00695C</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">#F5F7F6</item>
+        <item name="android:navigationBarColor">#19273A</item>
+
+        <item name="android:windowBackground">#F5F7F6</item>
+    </style>
+</resources>

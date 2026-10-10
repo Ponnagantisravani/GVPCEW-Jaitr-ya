@@ -1,0 +1,1 @@
+import {pool} from '../src/config/db.js';const r=await pool.query("select s.id,s.roll_number,u.email,u.full_name,s.academic_section_id from students s join users u on u.id=s.user_id where s.roll_number in ('324103210168','324103210170','324103210164')");console.log(r.rows);await pool.end();

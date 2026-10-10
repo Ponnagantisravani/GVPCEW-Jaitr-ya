@@ -23,14 +23,7 @@ async function databaseExists(adminClient, databaseName) {
 
 async function runSqlFile(client, filePath) {
   const sql = await fs.readFile(filePath, "utf8");
-  const statements = sql
-    .split(";")
-    .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0 && !statement.startsWith("--"));
-
-  for (const statement of statements) {
-    await client.query(statement);
-  }
+  await client.query(sql);
 }
 
 async function resetSchema(client) {
@@ -88,10 +81,12 @@ export async function bootstrapDatabase() {
 
   await appClient.connect();
   try {
-    await resetSchema(appClient);
+    if (process.env.NODE_ENV === 'production') throw new Error('Use db:migrate:production in production.');
+    if (process.argv.includes('--reset')) await resetSchema(appClient);
     await runSqlFile(appClient, schemaPath);
     await appClient.query(await fs.readFile(path.resolve(__dirname, '../../database/syllabus.sql'), 'utf8'));
-    await runSqlFile(appClient, seedPath);
+    await appClient.query(await fs.readFile(path.resolve(__dirname, '../../database/production.sql'), 'utf8'));
+    if (process.argv.includes('--seed-demo')) { await runSqlFile(appClient, seedPath); await appClient.query('insert into user_roles(user_id,role) select id,role from users on conflict do nothing'); }
     console.log("Schema and seed loaded successfully");
   } finally {
     await appClient.end();

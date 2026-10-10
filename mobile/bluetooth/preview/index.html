@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GVPCEW Attendance — Interactive preview</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e9eeeb;color:#19273a;font:16px/1.5 Arial,sans-serif}
+.layout{max-width:1000px;margin:40px auto;display:grid;grid-template-columns:1fr 410px;gap:64px;padding:0 24px;align-items:start}
+aside{padding-top:55px}aside h1{font-size:40px;line-height:1.15;letter-spacing:-1.5px;margin:16px 0}
+aside p{color:#556773;max-width:370px}.badge{display:inline-block;background:#fff;border:1px solid #cbd9d2;border-radius:100px;padding:6px 12px;color:#00695c;font-size:12px;font-weight:bold;letter-spacing:1px}
+aside ol{padding-left:22px;color:#556773}aside li{padding:8px 0}.note{border-top:1px solid #cbd9d2;margin-top:30px;padding-top:16px;font-size:13px}
+.phone{background:#f5f7f6;border:8px solid #263c36;border-radius:36px;min-height:740px;overflow:hidden;box-shadow:0 20px 50px #263c3620}
+.statusbar{padding:12px 22px 3px;display:flex;justify-content:space-between;font-size:12px;font-weight:bold}
+main{padding:20px 24px 28px}.brand{font-size:12px;color:#00695c;font-weight:bold;letter-spacing:1px}
+h2{font-size:28px;line-height:1.2;margin:14px 0 10px}p{margin:10px 0;color:#556773;font-size:15px}
+button{font:inherit;cursor:pointer;width:100%;border:0;border-radius:14px;min-height:56px;padding:12px 14px;background:#00695c;color:white;margin-top:8px}
+button:hover{filter:brightness(.95)}button:focus-visible,input:focus-visible{outline:3px solid #579c90;outline-offset:3px}button.secondary{color:#00695c;background:#e6efeb}button:disabled{background:#dce2df;color:#556773;cursor:wait}
+.card{background:white;border-radius:20px;padding:16px 20px 18px;margin:16px 0}.connection{font-size:18px;line-height:1.45;font-weight:bold;margin:0 0 20px}
+label{display:block;font-size:13px;color:#556773;margin-bottom:5px}input{font:inherit;border:1px solid #83958d;border-radius:5px;padding:15px;width:100%;background:transparent;text-transform:uppercase}
+.small{font-size:13px}.error{font-size:13px;color:#a02f29}.receipt{color:#00695c;margin:16px 0}
+.camera{height:300px;background:#273d39;border-radius:8px;margin:18px 0;display:grid;place-items:center;position:relative;overflow:hidden}
+.oval{border:3px solid #7ee2c9;border-radius:50%;width:185px;height:245px;display:grid;place-items:center}.oval svg{width:160px;opacity:.5}
+.cameralabel{position:absolute;bottom:8px;color:white;font-size:12px}.success{font-size:50px;color:#00695c;margin:12px 0}
+dialog{border:0;border-radius:20px;padding:24px;max-width:340px;width:calc(100% - 36px);box-shadow:0 20px 60px #0004}dialog::backdrop{background:#19273a70}dialog h3{margin-top:0}dialog p{font-size:14px}
+.reset{max-width:180px;margin-top:16px;border:1px solid #b8cac1;background:transparent;color:#00695c}
+[hidden]{display:none!important}
+@media(max-width:760px){.layout{grid-template-columns:1fr;gap:22px;margin:20px auto;max-width:450px;padding:0 12px}aside{padding-top:0}aside h1{font-size:28px}aside ol,.note{display:none}.phone{min-height:700px}aside p{margin-bottom:0}.reset{min-height:40px}}
+
+video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.camera .oval{position:absolute;pointer-events:none}.record{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #dce2df}.record img{width:72px;height:72px;object-fit:cover;border-radius:12px}.record p{margin:3px 0}.navlink{display:block;padding:14px;text-align:center;background:#e6efeb;border-radius:14px;color:#00695c;margin-top:12px}a{color:#00695c}#serverError{display:block}
+
+#remindersDialog{max-width:390px;max-height:90vh;overflow-y:auto;background:#f5f7f6}.notification-preview{margin-top:14px;padding:14px;border-left:4px solid #00695c;border-radius:8px;background:#e6efeb}.notification-preview p{font-size:14px}#remindersDialog .card{padding:16px}#studentReminders,#coordinatorReminders{margin-bottom:18px}
+</style></head><body><div class="layout"><aside><span class="badge">LIVE WEBCAM · LOCAL DEMO</span><h1>Try it in<br>two tabs.</h1><p>Open a class in one tab. Capture and submit from the other.</p>
+<ol><li><a href="http://localhost:4173/?role=coordinator" target="_blank" rel="noopener">Open coordinator tab</a> and click <strong>Open class</strong>.</li><li><a href="http://localhost:4173/?role=student" target="_blank" rel="noopener">Open student tab</a>, enter <strong>23CSE001</strong>, then click <strong>Mark attendance</strong>.</li><li>Allow the webcam. Click <strong>Capture photo &amp; mark</strong>. Check the coordinator tab for your photo.</li></ol>
+<p class="note">Real webcam, simulated classroom connection. Both tabs must use this same localhost address in the same computer. Photos go only to this local preview server and remain in memory until a new class opens or the server stops. There is no face detection, identity verification or real Bluetooth in this web demo.</p><button class="reset" id="reset">Reset this screen</button><p id="serverError" class="error" role="alert"></p></aside>
+<div class="phone"><div class="statusbar"><span>GVPCEW</span><span>WEB CAMERA DEMO</span></div><main>
+<section id="student"><button class="secondary" id="studentReminders">Reminders</button><div class="brand">GVPCEW / ATTENDANCE</div><h2>Mark attendance</h2><p>Wait for your coordinator, enter your ID and open the camera.</p>
+<button class="secondary" id="permissions">Allow camera access</button>
+<form id="attendanceForm" class="card" novalidate><div class="connection" id="connection" role="status">Checking coordinator class...</div>
+<label for="studentId">Student ID</label><input id="studentId" autocomplete="off" placeholder="e.g. 23CSE001" maxlength="10" aria-describedby="idError"><div id="idError" class="error" role="alert"></div>
+<button id="mark" type="submit">Mark attendance</button></form><div id="receipt" class="receipt" role="status"></div>
+<p class="small">Your captured photo will appear in the coordinator tab as a demo record pending verification.</p><a class="navlink" href="http://localhost:4173/?role=coordinator" target="_blank" rel="noopener">Open coordinator in another tab</a></section>
+<section id="cameraScreen" hidden><button class="secondary" id="cancelCapture">Back</button><div class="brand" style="margin-top:18px">GVPCEW / ATTENDANCE</div><h2>Position your face</h2><p>Look straight ahead in even lighting.</p>
+<div class="camera"><video id="webcam" autoplay muted playsinline aria-label="Live webcam preview"></video><div class="oval" aria-hidden="true"></div><span class="cameralabel">LIVE CAMERA · MANUAL CAPTURE</span></div>
+<p id="captureStatus" role="status">Opening camera...</p><p id="remaining" class="small"></p>
+<button id="capture" disabled>Capture photo &amp; mark</button><button class="secondary" id="retryCamera" hidden>Retry camera</button>
+<p class="small">Capture only yourself. This demo takes a photo; it does not detect or verify your face.</p></section>
+<section id="coordinator" hidden><button class="secondary" id="coordinatorReminders">Reminders</button><div class="brand">GVPCEW / ATTENDANCE</div><h2>Coordinator</h2><p>Open a class, then keep this tab open.</p>
+<div class="card"><div class="connection" id="classStatus" role="status">Checking class...</div><button id="toggleClass">Open class</button><p id="coordinatorError" class="error" role="alert"></p></div>
+<a class="navlink" href="http://localhost:4173/?role=student" target="_blank" rel="noopener">Open student in another tab</a>
+<p class="small">The demo class expires after five minutes. Opening a new class clears the previous demo photos. Closing a class stops new submissions.</p>
+<h3 id="count" aria-live="polite">0 students captured</h3><div id="records"></div>
+<p class="small">Local demo records only. Photos require coordinator review; student identity has not been verified.</p></section>
+</main></div></div><dialog id="remindersDialog" aria-labelledby="remindersTitle">
+<h3 id="remindersTitle">Reminders</h3><p>Try a notification or a short alarm.</p>
+<div class="card"><strong>Notifications</strong><p class="small">Show an attendance reminder here and as a desktop notification if you allow it.</p>
+<button id="testNotification">Test notification</button><p id="notificationStatus" class="small" role="status"></p>
+<div id="notificationPreview" class="notification-preview" hidden role="status"><strong>GVPCEW Attendance</strong><p>Time to mark your attendance. Open the student tab to continue.</p><span class="small">Test reminder · Just now</span></div></div>
+<div class="card"><strong>Alarm</strong><p class="small">A test alarm rings in 5 seconds, then stops after 15 seconds. Keep this tab open and turn up your volume.</p>
+<button id="testAlarm">Test alarm in 5 seconds</button><p id="alarmStatus" role="status">No alarm scheduled.</p><button id="stopAlarm" class="secondary" hidden>Cancel alarm</button></div>
+<p class="small">These are browser tests. Closing this panel cancels its alarm. Reminders while the browser is closed require the Android app.</p>
+<button id="closeReminders" class="secondary">Close reminders</button></dialog><script src="./app.js"></script></body></html>

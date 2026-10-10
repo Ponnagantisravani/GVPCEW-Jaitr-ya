@@ -10,8 +10,12 @@ if (!env.databaseUrl) {
 
 export const pool = new Pool({
   connectionString: env.databaseUrl,
+  connectionTimeoutMillis: 10000,
+  query_timeout: 30000,
   ssl: getSslConfig(env.databaseUrl, env.databaseSslMode)
 });
+
+pool.on('error', error => console.error('Idle database connection failed:', error.code || error.name));
 
 export async function verifyDatabaseConnection() {
   await pool.query("select 1");

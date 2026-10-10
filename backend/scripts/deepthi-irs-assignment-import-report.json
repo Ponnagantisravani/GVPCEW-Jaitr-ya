@@ -1,0 +1,273 @@
+{
+  "mode": "apply",
+  "faculty": "deepthim@gvpcew.ac.in",
+  "subject": "IRS",
+  "sourceRows": 209,
+  "loaded": 181,
+  "changed": 181,
+  "byAssignedSection": {
+    "1": 71,
+    "2": 70,
+    "3": 40
+  },
+  "missing": [
+    "324103210044",
+    "324103210045",
+    "324103210046",
+    "324103210047",
+    "324103210048",
+    "324103210049",
+    "324103210050",
+    "324103210051",
+    "324103210052",
+    "324103210053",
+    "325103210L01",
+    "325103210L02",
+    "325103210L03",
+    "325103210L05",
+    "325103210L06",
+    "325103210L07",
+    "325103210L08",
+    "325103210L09",
+    "325103210L10",
+    "325103210L11",
+    "325103210L12",
+    "325103210L13",
+    "325103210L14",
+    "325103210L29",
+    "325103210L20",
+    "325103210L21",
+    "325103210L30"
+  ],
+  "outsideAssignedClasses": [
+    "324103210168"
+  ],
+  "sectionDifferences": [
+    {
+      "roll": "324103210063",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210064",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210065",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210066",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210067",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210068",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210069",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210070",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210071",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210072",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210073",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210074",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210075",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210076",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210077",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210078",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210079",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210080",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210081",
+      "sourceSection": "2",
+      "assignedSection": "1"
+    },
+    {
+      "roll": "324103210127",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210128",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210129",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210130",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210132",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210133",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210134",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210135",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210136",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210137",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210138",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210139",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210140",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210141",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210142",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210143",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210144",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210145",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210146",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210147",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210148",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210149",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210150",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210151",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210152",
+      "sourceSection": "3",
+      "assignedSection": "2"
+    },
+    {
+      "roll": "324103210169",
+      "sourceSection": "3",
+      "assignedSection": "1"
+    }
+  ],
+  "calculation": "Average of three assignments out of 10; source blank cells count as zero."
+}

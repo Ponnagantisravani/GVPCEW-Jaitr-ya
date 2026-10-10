@@ -5,6 +5,12 @@ venv/
 __pycache__/
 .env
 dataset/
+datasets/
+face-enrollment/datasets/
+build/
+dist/
+face-enrollment/build/
+face-enrollment/dist/
 tools/__pycache__/
 
 .tmp/

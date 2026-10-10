@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sign-in layout fixture</title><body><div id="root"></div><script type="module">
+if(!import.meta.env.DEV)throw new Error('Development fixture only');
+const path=new URLSearchParams(location.search).get('screen')==='register'?'/register':'/index.html';
+Storage.prototype.getItem=()=>null;Storage.prototype.setItem=()=>{};
+history.replaceState(null,'',path);
+await import('/src/main.jsx');
+setTimeout(()=>{const failures=[];if(!document.querySelector('.login form'))failures.push('Missing form');if(document.documentElement.scrollWidth>innerWidth+2)failures.push('Page overflow');for(const input of document.querySelectorAll('input,select')){const box=input.getBoundingClientRect();if(box.right>innerWidth||box.left<0)failures.push('Input overflow');if(parseFloat(getComputedStyle(input).fontSize)<16)failures.push('Small input text');}parent.postMessage({kind:'layout-result',screen:path,width:innerWidth,failures},location.origin);},300);
+</script></body></html>

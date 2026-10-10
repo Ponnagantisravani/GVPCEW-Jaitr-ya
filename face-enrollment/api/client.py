@@ -14,6 +14,7 @@ class BackendClient:
         response = requests.post(
             self._url("/enrollment/lookup"),
             json={"rollNumber": roll_number},
+            headers={"X-Enrollment-Key": self.enrollment_api_key},
             timeout=10
         )
         return self._parse_response(response)["student"]

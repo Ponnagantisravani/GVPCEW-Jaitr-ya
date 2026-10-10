@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from '../utils/router.js';
 import { pool } from '../config/db.js';
 import { requireAuth, allowRoles } from '../middleware/auth.js';
 
@@ -6,11 +6,11 @@ export const facultyLeaveRequestsRouter = Router();
 facultyLeaveRequestsRouter.use(requireAuth, allowRoles('faculty'));
 
 const visibleToFaculty = userParameter => `(
-  s.department_id = (select department_id from faculty where user_id = ${userParameter})
-  or exists (
+  exists (
     select 1 from timetable t
     where t.faculty_id = (select id from faculty where user_id = ${userParameter})
       and t.academic_section_id = s.academic_section_id
+      and t.status = 'published'
   )
 )`;
 

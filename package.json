@@ -7,6 +7,9 @@
     "dev": "npm --prefix frontend run dev",
     "dev:api": "npm --prefix backend run dev",
     "build": "npm --prefix frontend run build",
-    "db:init": "npm --prefix backend run db:init"
+    "db:init": "npm --prefix backend run db:init",
+    "test": "npm --prefix frontend test && npm --prefix backend test",
+    "db:migrate:production": "npm --prefix backend run db:migrate:production",
+    "db:create-admin": "npm --prefix backend run db:create-admin"
   }
 }

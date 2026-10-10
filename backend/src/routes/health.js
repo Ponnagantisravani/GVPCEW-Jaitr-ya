@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router } from '../utils/router.js';
 
 export const healthRouter = Router();
 

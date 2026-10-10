@@ -1,0 +1,561 @@
+{
+  "period": "August 2026",
+  "source": "CSE–1 spreadsheet screenshots, rows 1–69",
+  "importKind": "monthly_summary",
+  "subject": null,
+  "recordedSessions": 27,
+  "rows": [
+    {
+      "serial": 1,
+      "roll_number": "324103210001",
+      "full_name": "Adireddi Sashikala",
+      "present": 26,
+      "absent": 1,
+      "percentage": 96.3
+    },
+    {
+      "serial": 2,
+      "roll_number": "324103210002",
+      "full_name": "Akula Renuka",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 3,
+      "roll_number": "324103210003",
+      "full_name": "Sree Jyothsna",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 4,
+      "roll_number": "324103210004",
+      "full_name": "Ampolu Vidya Samanvitha",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 5,
+      "roll_number": "324103210005",
+      "full_name": "Anakapalli Siva Joshika",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 6,
+      "roll_number": "324103210006",
+      "full_name": "Andra Bhuvaneshwari",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    },
+    {
+      "serial": 7,
+      "roll_number": "324103210007",
+      "full_name": "Annam Devula Ramya",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 8,
+      "roll_number": "324103210008",
+      "full_name": "Annapureddy Venkata Hari Priya",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 9,
+      "roll_number": "324103210009",
+      "full_name": "Annavarapu Krishna Sriveda",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    },
+    {
+      "serial": 10,
+      "roll_number": "324103210011",
+      "full_name": "Bandaru Rishitha",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 11,
+      "roll_number": "324103210012",
+      "full_name": "Bandaru Sri Keerthi",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 12,
+      "roll_number": "324103210013",
+      "full_name": "Banka Charishma",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 13,
+      "roll_number": "324103210014",
+      "full_name": "Batchu Poojitha",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 14,
+      "roll_number": "324103210015",
+      "full_name": "Bayya Eesha",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 15,
+      "roll_number": "324103210016",
+      "full_name": "Beki Vaishnavi",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 16,
+      "roll_number": "324103210017",
+      "full_name": "Betha Saheethi",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 17,
+      "roll_number": "324103210018",
+      "full_name": "Bobbadi Jyothsna Lakshmi",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 18,
+      "roll_number": "324103210019",
+      "full_name": "Bonam Maruthi Anusha",
+      "present": 19,
+      "absent": 8,
+      "percentage": 70.37
+    },
+    {
+      "serial": 19,
+      "roll_number": "324103210020",
+      "full_name": "Bootu Kavya",
+      "present": 19,
+      "absent": 8,
+      "percentage": 70.37
+    },
+    {
+      "serial": 20,
+      "roll_number": "324103210021",
+      "full_name": "Boyina Manasa Venkata Sai Vigneshwari",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 21,
+      "roll_number": "324103210022",
+      "full_name": "Bugata Jahnavi",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 22,
+      "roll_number": "324103210023",
+      "full_name": "Bure Bhagyasri",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 23,
+      "roll_number": "324103210024",
+      "full_name": "Burla Sharmila",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 24,
+      "roll_number": "324103210025",
+      "full_name": "Busse Deepthi",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 25,
+      "roll_number": "324103210026",
+      "full_name": "Byrraju Jahnavi",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 26,
+      "roll_number": "324103210027",
+      "full_name": "Chebrolu Harshini",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    },
+    {
+      "serial": 27,
+      "roll_number": "324103210028",
+      "full_name": "Cherukuri Bhavana",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 28,
+      "roll_number": "324103210029",
+      "full_name": "Chetti Mohida Meghana",
+      "present": 27,
+      "absent": 0,
+      "percentage": 100
+    },
+    {
+      "serial": 29,
+      "roll_number": "324103210030",
+      "full_name": "Chevala Sirisha",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 30,
+      "roll_number": "324103210031",
+      "full_name": "Chigurupati Hadhassa",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    },
+    {
+      "serial": 31,
+      "roll_number": "324103210032",
+      "full_name": "Chinta Akshaya Satya Srija",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 32,
+      "roll_number": "324103210033",
+      "full_name": "Chodigori Saranya",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 33,
+      "roll_number": "324103210034",
+      "full_name": "Danaboina Naga Poojitha",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 34,
+      "roll_number": "324103210035",
+      "full_name": "Dantuluri Indravathi Sai",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 35,
+      "roll_number": "324103210036",
+      "full_name": "Deva Vindhya Hasini",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 36,
+      "roll_number": "324103210037",
+      "full_name": "Didla Valli",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 37,
+      "roll_number": "324103210038",
+      "full_name": "Disha Mahata",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 38,
+      "roll_number": "324103210039",
+      "full_name": "D Vaishnavi",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 39,
+      "roll_number": "324103210040",
+      "full_name": "Dola Lalitha",
+      "present": 18,
+      "absent": 9,
+      "percentage": 66.67
+    },
+    {
+      "serial": 40,
+      "roll_number": "324103210041",
+      "full_name": "Doppa Rushika",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 41,
+      "roll_number": "324103210042",
+      "full_name": "Dukka Vani",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 42,
+      "roll_number": "324103210043",
+      "full_name": "Duli Mathuna Sri",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 43,
+      "roll_number": "324103210044",
+      "full_name": "Vedha Sri",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 44,
+      "roll_number": "324103210045",
+      "full_name": "Eeli Divyasri",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 45,
+      "roll_number": "324103210046",
+      "full_name": "Eluripadu Pranitha Chowdary",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 46,
+      "roll_number": "324103210047",
+      "full_name": "G Sri Vidhya",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 47,
+      "roll_number": "324103210048",
+      "full_name": "Gadepalli Kapila Venkata Lakshmi Naga Lalith",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 48,
+      "roll_number": "324103210049",
+      "full_name": "Galla Kusumitha",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 49,
+      "roll_number": "324103210050",
+      "full_name": "Gampa Susmitha",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 50,
+      "roll_number": "324103210051",
+      "full_name": "Ganagalla Sushma",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 51,
+      "roll_number": "324103210052",
+      "full_name": "Ganji Swathi Chandana",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 52,
+      "roll_number": "324103210053",
+      "full_name": "Garikipati Manasa",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    },
+    {
+      "serial": 53,
+      "roll_number": "324103210054",
+      "full_name": "Gavara Sravanthi",
+      "present": 21,
+      "absent": 6,
+      "percentage": 77.78
+    },
+    {
+      "serial": 54,
+      "roll_number": "324103210055",
+      "full_name": "Gavireddy Sravani Varalakshmi",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 55,
+      "roll_number": "324103210056",
+      "full_name": "Geda Lipi Mallika",
+      "present": 17,
+      "absent": 10,
+      "percentage": 62.96
+    },
+    {
+      "serial": 56,
+      "roll_number": "324103210057",
+      "full_name": "Gembali Teja Sri",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 57,
+      "roll_number": "324103210058",
+      "full_name": "Gidla Geetha Vardshini",
+      "present": 26,
+      "absent": 1,
+      "percentage": 96.3
+    },
+    {
+      "serial": 58,
+      "roll_number": "324103210059",
+      "full_name": "Golagani Amrutha Varshini",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 59,
+      "roll_number": "324103210060",
+      "full_name": "Gollavilli Sandhya",
+      "present": 22,
+      "absent": 5,
+      "percentage": 81.48
+    },
+    {
+      "serial": 60,
+      "roll_number": "324103210061",
+      "full_name": "Gonti Jaya Sri",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    },
+    {
+      "serial": 61,
+      "roll_number": "324103210062",
+      "full_name": "Gorinta Sahithi",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 62,
+      "roll_number": "325103210L01",
+      "full_name": "Bezawada Mounika",
+      "present": 26,
+      "absent": 1,
+      "percentage": 96.3
+    },
+    {
+      "serial": 63,
+      "roll_number": "325103210L02",
+      "full_name": "Bhatta Jyotheeswari",
+      "present": 20,
+      "absent": 7,
+      "percentage": 74.07
+    },
+    {
+      "serial": 64,
+      "roll_number": "325103210L03",
+      "full_name": "Bhukya Joshna",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    },
+    {
+      "serial": 65,
+      "roll_number": "325103210L05",
+      "full_name": "Chilla Vanitha",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 66,
+      "roll_number": "325103210L06",
+      "full_name": "Dosuri Nihaka",
+      "present": 25,
+      "absent": 2,
+      "percentage": 92.59
+    },
+    {
+      "serial": 67,
+      "roll_number": "325103210L07",
+      "full_name": "Gandreddy Jhansi",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 68,
+      "roll_number": "325103210L08",
+      "full_name": "Goneda Sasi Prabha",
+      "present": 23,
+      "absent": 4,
+      "percentage": 85.19
+    },
+    {
+      "serial": 69,
+      "roll_number": "325103210L09",
+      "full_name": "Gurijala Sailaja",
+      "present": 24,
+      "absent": 3,
+      "percentage": 88.89
+    }
+  ]
+}

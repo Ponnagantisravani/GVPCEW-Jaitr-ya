@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router } from '../utils/router.js';
 import { z } from "zod";
 import { pool } from "../config/db.js";
 import { asyncHandler } from "../utils/asyncHandler.js";

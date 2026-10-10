@@ -1,0 +1,14 @@
+import React,{useEffect,useMemo,useState} from 'react';
+import {api} from './api.js';
+import {errorMessage} from './LiveWorkspaces.jsx';
+
+function currentWeek(){const d=new Date(),day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return `${d.getFullYear()}-W${String(Math.ceil((((d-new Date(d.getFullYear(),0,1))/86400000)+new Date(d.getFullYear(),0,1).getDay()+1)/7)).padStart(2,'0')}`;}
+function weekDates(value){const [year,week]=String(value).split('-W').map(Number);const jan4=new Date(year,0,4),offset=(jan4.getDay()+6)%7;const monday=new Date(year,0,4-offset+(week-1)*7);return Array.from({length:6},(_,i)=>{const date=new Date(monday);date.setDate(monday.getDate()+i);return date.toISOString().slice(0,10);});}
+
+export function WeeklyAttendance({subjectId,sectionId,students,subject,refreshKey}){
+ const [week,setWeek]=useState(currentWeek),[rows,setRows]=useState([]),[error,setError]=useState(''),[loading,setLoading]=useState(false);
+ const dates=useMemo(()=>weekDates(week),[week]),month=dates[0]?.slice(0,7);
+ useEffect(()=>{let active=true;setRows([]);setError('');if(!subjectId||!sectionId||!month)return;setLoading(true);api.get('/faculty/attendance-register',{params:{subjectId,sectionId,month}}).then(r=>{if(active)setRows(r.data.attendance.filter(row=>dates.includes(row.date)));}).catch(e=>active&&setError(errorMessage(e))).finally(()=>active&&setLoading(false));return()=>{active=false;};},[subjectId,sectionId,month,refreshKey,week]);
+ const marks=new Map(rows.map(row=>[row.student_id+':'+row.date,row.status]));
+ return <section className="weekly-register"><div className="monthly-register__head"><div><h3>Weekly Attendance {subject ? `— ${subject.code}` : ''}</h3><p>Monday to Saturday attendance summary</p></div><label>Week <input type="week" value={week} onChange={e=>setWeek(e.target.value)}/></label></div>{error?<p className="error" role="alert">{error}</p>:loading?<p>Loading weekly register…</p>:<div className="portal-table"><table><thead><tr><th>Roll number</th><th>Student</th>{dates.map(date=><th key={date}>{new Date(date+'T00:00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric'})}</th>)}<th>Present</th><th>Absent</th><th>%</th></tr></thead><tbody>{students.map(student=>{const entries=rows.filter(row=>row.student_id===student.id),present=entries.filter(row=>row.status!=='absent').length,absent=entries.filter(row=>row.status==='absent').length;return <tr key={student.id}><th>{student.roll_number}</th><td>{student.full_name}</td>{dates.map(date=>{const status=marks.get(student.id+':'+date);return <td className={'monthly-register__mark monthly-register__mark--'+(status||'empty')} key={date}>{({present:'P',absent:'A',late:'L'})[status]||'—'}</td>;})}<td>{present}</td><td>{absent}</td><td>{entries.length?(100*present/entries.length).toFixed(1)+'%':'—'}</td></tr>;})}</tbody></table></div>}</section>;
+}

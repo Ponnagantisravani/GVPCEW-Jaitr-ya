@@ -1,0 +1,102 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import pg from 'pg';
+import bcrypt from 'bcryptjs';
+import {readFile} from 'node:fs/promises';
+import {randomBytes} from 'node:crypto';
+
+test('dashboard workflows persist and remain scoped to the signed-in role', async t => {
+ const url=process.env.TEST_DATABASE_URL;
+ assert.ok(url,'Set TEST_DATABASE_URL to an isolated PostgreSQL test database.');
+ const schema='portal_test_'+randomBytes(6).toString('hex');
+ const admin=new pg.Client({connectionString:url});await admin.connect();
+ await admin.query('create schema '+schema);
+ const scoped=new URL(url);scoped.searchParams.set('options','-c search_path='+schema+',public');
+ process.env.DATABASE_URL=scoped.toString();process.env.DATABASE_SSL_MODE='disable';
+ process.env.JWT_SECRET='dashboard-integration-test-secret-only';process.env.NODE_ENV='test';
+ const {pool}=await import('../src/config/db.js');
+ const {createApp}=await import('../src/app.js');
+ let server;
+ t.after(async()=>{if(server)await new Promise(r=>server.close(r));await pool.end();await admin.query('drop schema '+schema+' cascade');await admin.end();});
+ for(const name of ['schema.sql','syllabus.sql','production.sql','bluetooth-attendance.sql','reminders.sql','academic-access.sql'])await pool.query(await readFile(new URL('../../database/'+name,import.meta.url),'utf8'));
+ const password='Test-account-password-2026',hash=await bcrypt.hash(password,4);
+ const users={},people={};
+ const dept=(await pool.query("insert into departments(name) values('Test Computer Science') returning id")).rows[0].id;
+ const section=(await pool.query("insert into academic_sections(department_id,year_number,semester_number,section_name,academic_year) values($1,2,3,'1','2026-2027') returning id",[dept])).rows[0].id;
+ for(const role of ['admin','academic_coordinator','faculty','student','student_coordinator']){
+  const u=(await pool.query('insert into users(full_name,email,password_hash,role) values($1,$2,$3,$4) returning id',[role+' Tester',role+'@example.invalid',hash,role==='faculty'?'faculty':role==='admin'?'admin':'student'])).rows[0].id;
+  users[role]=u;await pool.query('insert into user_roles(user_id,role) values($1,$2)',[u,role]);
+  if(role==='faculty')people[role]=(await pool.query("insert into faculty(user_id,department_id,employee_code) values($1,$2,'TEST-FACULTY') returning id",[u,dept])).rows[0].id;
+  if(role.includes('student'))people[role]=(await pool.query("insert into students(user_id,department_id,roll_number,section,academic_section_id,face_enrollment_status,profile_details) values($1,$2,$3,'1',$4,'completed',$5) returning id",[u,dept,'TEST-'+role,section,{course:'B.Tech',batch:'2024-2028',department_code:'CSE'}])).rows[0].id;
+ }
+ const subject=(await pool.query("insert into subjects(department_id,code,name,faculty_id) values($1,'TEST-CS','Test Subject',$2) returning id",[dept,people.faculty])).rows[0].id;
+ const room=(await pool.query("insert into classrooms(room_code,building_name,room_name) values('TEST-301','Test block','Test room') returning id")).rows[0].id;
+ await pool.query('insert into academic_coordinator_departments(user_id,department_id) values($1,$2)',[users.academic_coordinator,dept]);
+ await pool.query('insert into student_coordinator_sections(user_id,academic_section_id) values($1,$2)',[users.student_coordinator,section]);
+ await pool.query("insert into timetable(subject_id,faculty_id,classroom_id,academic_section_id,day_of_week,start_time,end_time,academic_year,status) values($1,$2,$3,$4,2,'09:00','10:00','2026-2027','published')",[subject,people.faculty,room,section]);
+ server=createApp().listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+ const base='http://127.0.0.1:'+server.address().port+'/api',tokens={};
+ let checked=0;
+ const call=async(role,method,path,body,expected=200)=>{
+  const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(tokens[role]?{Authorization:'Bearer '+tokens[role]}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const data=r.status===204?{}:await r.json();assert.equal(r.status,expected,method+' '+path+': '+JSON.stringify(data));checked++;return data;
+ };
+ for(const role of Object.keys(users)){const login=await call(role,'POST','/auth/login',{email:role+'@example.invalid',password});assert.ok(login.token);tokens[role]=login.token;}
+ for(const role of Object.keys(users)){
+  for(const path of ['/auth/me','/dashboard?role='+role,'/subjects','/notices','/events','/notifications'])await call(role,'GET',path);
+ }
+ for(const path of ['/profile','/dashboard','/attendance','/assignments','/marks','/timetable','/leave-requests'])await call('student','GET','/students'+path);
+ await call('student_coordinator','GET','/students/profile');
+ for(const role of ['admin','academic_coordinator'])for(const path of ['/management/catalog','/management/reports','/timetables/catalog','/timetables/coordinator'])await call(role,'GET',path);
+ for(const role of ['student','student_coordinator','faculty'])await call(role,'GET','/management/catalog',undefined,403);
+ for(const path of ['/faculty/workspace','/faculty/leave-requests','/timetables/faculty'])await call('faculty','GET',path);
+ await call('student','GET','/timetables/student');
+ for(const role of ['faculty','student_coordinator']){await call(role,'GET','/attendance-sessions/catalog');await call(role,'GET','/attendance-sessions/active');}
+ const reminder=await call('student','POST','/notifications',{title:'Remember assignment',body:'Submit the report'},201);
+ const notes=await call('student','GET','/notifications');assert.ok(notes.notifications.length);const nid=notes.notifications[0].id;
+ await call('faculty','PATCH','/notifications/'+nid+'/read',undefined,404);await call('student','PATCH','/notifications/'+nid+'/read');
+ await call('faculty','POST','/notices',{title:'Test announcement',description:'Classroom change for testing',category:'academic',departmentId:dept,sectionId:section},201);
+ assert.ok((await call('student','GET','/notices')).notices.some(x=>x.title==='Test announcement'));
+ const date=new Date().toISOString().slice(0,10);
+ await call('faculty','POST','/faculty/attendance',{subjectId:subject,classroomId:room,date,entries:[{studentId:people.student,status:'present'}]});
+ assert.equal((await call('student','GET','/students/attendance')).subjects[0].percentage,'100.0');
+ await call('faculty','GET','/faculty/attendance?subjectId='+subject+'&date='+date);
+ await call('faculty','GET','/faculty/attendance-register?subjectId='+subject+'&month='+date.slice(0,7));
+ await call('faculty','POST','/faculty/marks',{subjectId:subject,type:'mid_1',maximum:30,entries:[{studentId:people.student,score:24}]});
+ assert.equal((await call('student','GET','/students/marks')).marks[0].score,'24.00');
+ await call('faculty','POST','/faculty/marks',{subjectId:subject,type:'mid_1',maximum:30,entries:[{studentId:people.student,score:40}]},400);
+ const assignment=(await call('faculty','POST','/faculty/assignments',{subjectId:subject,title:'Test assignment',description:'Test instructions',deadline:new Date(Date.now()+86400000).toISOString()},201)).assignment;
+ assert.ok((await call('student','GET','/students/assignments')).assignments.some(x=>x.id===assignment.id));
+ await call('student','POST','/students/assignments/'+assignment.id+'/submit',{url:'https://example.invalid/assignment'});
+ assert.equal((await call('faculty','GET','/faculty/assignments/'+assignment.id+'/submissions')).submissions.length,1);
+ const leave=(await call('student','POST','/students/leave-requests',{startDate:date,endDate:date,reason:'Test leave request'},201)).request;
+ await call('faculty','PATCH','/faculty/leave-requests/'+leave.id,{action:'approved',note:'Approved for test'});
+ assert.equal((await call('student','GET','/students/leave-requests')).requests[0].status,'approved');
+ const request=(await call('faculty','POST','/faculty/requests',{kind:'correction',details:'Please review this attendance correction.'},201)).request;
+ await call('academic_coordinator','PATCH','/management/requests/'+request.id,{status:'approved',note:'Reviewed'});
+ const session=(await call('student_coordinator','POST','/attendance-sessions/start',{subjectId:subject,sectionId:section,classroomId:room,durationMinutes:5},201)).session;
+ await call('student','POST','/attendance-sessions/check-in',{code:session.session_code});
+ await call('student','POST','/attendance-sessions/check-in',{code:session.session_code});
+ const participants=await call('student_coordinator','GET','/attendance-sessions/'+session.id+'/participants');assert.ok(participants.students.some(x=>x.status==='Present'));
+ await call('student_coordinator','POST','/attendance-sessions/'+session.id+'/stop');
+ await call('student','POST','/attendance-sessions/check-in',{code:session.session_code},404);
+ const calendar={title:'Test calendar',semesters:[{name:'Semester 1',rows:[{description:'Classes begin',from:date,to:'',duration:''}]}],holidays:[]};
+ await call('academic_coordinator','PUT','/academic-documents/calendar/main',{payload:calendar,sectionIds:[section]});
+ assert.equal((await call('student','GET','/academic-documents/calendar')).documents.length,0);
+ await call('academic_coordinator','POST','/academic-documents/calendar/main/publish',{payload:calendar,sectionIds:[section]});
+ assert.equal((await call('student','GET','/academic-documents/calendar')).documents[0].payload.title,calendar.title);
+ await call('student','PUT','/academic-documents/calendar/main',{payload:calendar},403);
+ const syllabus=(await call('academic_coordinator','POST','/syllabi',{title:'Test syllabus',department:'CSE',batch:'2024-2028',sectionIds:[section],structure:{semesters:[{name:'Semester 1',courses:[{code:'CS1',category:'Core',title:'Computing',l:'3',p:'0',internal:'30',external:'70',total:'100',credits:'3'}]}]}},201)).syllabus;
+ assert.equal((await call('student','GET','/syllabi')).syllabi.length,0);
+ await call('academic_coordinator','POST','/syllabi/'+syllabus.id+'/publish');
+ assert.equal((await call('student','GET','/syllabi')).syllabi.length,1);
+ const entry={sectionId:section,subjectId:subject,facultyId:people.faculty,classroomId:room,dayOfWeek:1,startTime:'09:00',endTime:'10:00',academicYear:'2026-2027'};
+ const row=await call('academic_coordinator','POST','/timetables',entry,201);
+ await call('academic_coordinator','POST','/timetables',{...entry,startTime:'09:30',endTime:'10:30'},409);
+ await call('academic_coordinator','POST','/timetables/publish',{ids:[row.id]});
+ assert.equal((await call('student','GET','/timetables/student')).timetable.length,2);
+ for(const role of ['student','student_coordinator','faculty','academic_coordinator'])await call('admin','GET','/admin/people?role='+role);
+ await call('admin','GET','/users');
+ await call('faculty','DELETE','/faculty/assignments/'+assignment.id,undefined,204);
+ console.log('Verified '+checked+' authenticated API calls using synthetic records.');
+});
