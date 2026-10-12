@@ -36,9 +36,10 @@ try{
  databaseReady=true;
  ({pool}=await import('../src/config/db.js'));
  const {mobileAttendanceRouter}=await import('../src/routes/mobileAttendance.js');
+ const {subjectAttendanceRouter}=await import('../src/routes/subjectAttendance.js');
  const {requestHash}=await import('../src/services/mobileAttendancePolicy.js');
  const {closeExpiredSessions,autoStartTimetableSessions,startAttendanceLifecycleWorker}=await import('../src/services/mobileAttendanceLifecycle.js');
- const app=express();app.use(express.json());app.use('/api/attendance',mobileAttendanceRouter);app.use((error,_req,res,_next)=>res.status(error.status||500).json({message:error.message}));
+ const app=express();app.use(express.json());app.use('/api/attendance',mobileAttendanceRouter);app.use('/api/attendance',subjectAttendanceRouter);app.use((error,_req,res,_next)=>res.status(error.status||500).json({message:error.message}));
  server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));const base='http://127.0.0.1:'+server.address().port+'/api/attendance';
  globalThis.fetch=async(url,init)=>{
   const target=String(url);
@@ -138,6 +139,25 @@ try{
  const privateReport=await request(mixed.members[63],'/session/'+mixed.session.id+'/report');assert.equal(privateReport.status,403);const history=await request(mixed.members[63],'/history');assert.equal(history.status,200);assert.equal(history.data.attendance.length,1);assert.equal(history.data.attendance[0].status,'ABSENT');
  await admin.query("update attendance_sessions set late_expires_at=clock_timestamp()-interval '1 second' where id=$1",[mixed.session.id]);const after=await request(mixed.members[63],'/session/'+mixed.session.id+'/challenge',{device_id:mixed.members[63].device,method:'fallback'});assert.equal(after.status,409);await closeExpiredSessions();await counts(mixed,{PRESENT:56,LATE:7,ABSENT:7});
  record('main closure, late recovery and read-only reports',{students:70,present:56,late:7,absent:7,closure_materialized_lag_ms:+Number(lag.ms).toFixed(1),late_timings:timings(late)});
+
+ // Verify the actual endpoints rendered by all three campus dashboards.
+ const linked=await cohort('Dashboard70');
+ await admin.query("insert into subject_attendance_subjects(subject_id,dept,year,semester,kind,faculty_email,display_name) values($1,'Synthetic CSE',3,5,'theory','faculty@simulation.invalid','Synthetic Subject')",[subject]);
+ await admin.query('insert into section_subjects(academic_section_id,subject_id,semester_number) values($1,$2,5) on conflict do nothing',[linked.section,subject]);
+ const dashboardStart=await request(linked.members[0],'/sessions',{subjectId:subject,period:1,durationSeconds:60});assert.equal(dashboardStart.status,201,JSON.stringify(dashboardStart.data));await loadSession(linked);
+ const subjectSession=(await admin.query('select * from subject_attendance_sessions where source_session_id=$1',[linked.session.id])).rows[0];assert(subjectSession,'Native coordinator start must create the dashboard subject session');
+ assert.equal(dashboardStart.data.session.id,subjectSession.id,'Dashboard start and end must use the same subject session ID');
+ const day=(await admin.query("select to_char((clock_timestamp() at time zone 'Asia/Kolkata')::date,'YYYY-MM-DD') date")).rows[0].date;
+ const reportPath=`/faculty/subjects/${subject}/attendance?date=${day}&period=1`;
+ const pendingReport=await request(teacher,reportPath);assert.equal(pendingReport.status,200);assert.equal(pendingReport.data.counts.pending,70);
+ await Promise.all(linked.members.map(m=>mark(linked,m)));
+ const savedReport=await request(teacher,reportPath);assert.equal(savedReport.status,200);assert.equal(savedReport.data.counts.present,70);assert.equal(savedReport.data.counts.pending,0);assert.equal(savedReport.data.counts.percentage,100);
+ const studentView=await request(linked.members[2],'/student/attendance');assert.equal(studentView.status,200);assert.equal(studentView.data.records.filter(r=>r.session_id===subjectSession.id&&r.status==='Present').length,1);
+ assert.equal((await request(linked.members[2],reportPath)).status,403,'Student must not access faculty report');
+ const coordinatorView=await request(linked.members[0],'/sessions/current');assert.equal(coordinatorView.status,200);assert.equal(coordinatorView.data.session.id,subjectSession.id);
+ assert.equal((await request(linked.members[0],`/sessions/${subjectSession.id}/end`,{})).status,200);
+ const finalReport=await request(teacher,reportPath);assert.equal(finalReport.data.counts.present,70);assert.equal(finalReport.data.counts.absent,0);
+ record('native Bluetooth attendance reflects in student, coordinator and faculty dashboards',{students:70,faculty_present:70,faculty_pending:0,percentage:100});
 
  const invalidRows=(await admin.query("select count(*)::int n from attendance_records where (status='PRESENT' and (method is distinct from 'ble' or is_late)) or (status='LATE' and (method is distinct from 'fallback' or not is_late)) or (status='ABSENT' and (method is not null or is_late))")).rows[0].n;assert.equal(invalidRows,0);
  assert.equal((await admin.query('select count(*)::int n from attendance_records a left join session_roster r on r.session_id=a.session_id and r.student_id=a.student_id where r.student_id is null')).rows[0].n,0);

@@ -23,7 +23,7 @@ async function accessToken(){
  return refreshing;
 }
 export function validIntegrity(payload,hash,now=Date.now()){
- const p=process.env.PLAY_INTEGRITY_PACKAGE_NAME,certs=(process.env.PLAY_INTEGRITY_CERT_SHA256||'').split(',').map(c=>c.trim()).filter(Boolean);
+ const p=process.env.PLAY_INTEGRITY_PACKAGE_NAME,certs=(process.env.PLAY_INTEGRITY_CERT_SHA256||'').split(',').map(c=>{const value=c.trim(),hex=value.replace(/:/g,'');return /^[a-fA-F0-9]{64}$/.test(hex)?Buffer.from(hex,'hex').toString('base64url'):value;}).filter(Boolean);
  if(!p||!payload||typeof payload!=='object'||typeof hash!=='string')return false;
  const d=payload?.requestDetails,a=payload?.appIntegrity,t=Number(d?.timestampMillis);
  return Boolean(d?.requestPackageName===p&&d.requestHash===hash&&Number.isFinite(t)&&t<=now+5000&&t>=now-30000&&a?.packageName===p&&a.appRecognitionVerdict==='PLAY_RECOGNIZED'&&Array.isArray(a.certificateSha256Digest)&&a.certificateSha256Digest.some(c=>certs.includes(c))&&Array.isArray(payload.deviceIntegrity?.deviceRecognitionVerdict)&&payload.deviceIntegrity.deviceRecognitionVerdict.includes('MEETS_DEVICE_INTEGRITY'));

@@ -1,4 +1,4 @@
-import {prepareSubjectSession,attachSubjectSession} from './subjectAttendance.js';
+import {prepareSubjectSession,attachSubjectSession,timetableSlots} from './subjectAttendance.js';
 import {parseAttendanceDuration} from './attendanceDuration.js';
 import crypto from 'node:crypto';
 import {pool} from '../config/db.js';
@@ -45,7 +45,18 @@ export async function startMobileSession({userId,deviceId,sectionId,timetableId,
  // Release old session row locks before the new roster takes enrollment FK locks.
  await closeExpiredSessions(db,sectionId);
  return attendanceTransaction(async c=>{
-  const setup=subjectSetup?await prepareSubjectSession(c,userId,subjectSetup):null;
+  let setup=subjectSetup?await prepareSubjectSession(c,userId,subjectSetup):null;
+  // Native starts and timetable starts must feed the same subject reports as
+  // starts from the coordinator dashboard. Take the subject lock first in all
+  // paths so racing dashboard/native starts cannot invert lock order.
+  if(!setup){
+   const mapped=(await c.query('select t.subject_id from timetable t join subject_attendance_subjects sa on sa.subject_id=t.subject_id where t.id=$1 and t.academic_section_id=$2',[timetableId,sectionId])).rows[0];
+   if(mapped?.subject_id){
+    const slot=(await timetableSlots(c,sectionId)).find(p=>p.id===timetableId);
+    if(!slot)fail(409,'Choose a published period for today.');
+    setup=await prepareSubjectSession(c,userId,{subjectId:mapped.subject_id,period:slot.period});
+   }
+  }
   await c.query('select pg_advisory_xact_lock(hashtext($1))',['mobile-attendance:'+sectionId]);
   const s=(await c.query('select * from students where user_id=$1 for update',[userId])).rows[0];
   if(!s||!s.face_enrolled||s.embedding_model!==MODEL||s.enrollment_status!=='approved'||s.bound_device_id!==deviceId)fail(403,'Approved MobileFaceNet enrollment on your bound device is required.');

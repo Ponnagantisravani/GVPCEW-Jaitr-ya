@@ -26,6 +26,7 @@ subjectAttendanceRouter.post('/sessions',coordinators,async(req,res)=>{
   const s=(await pool.query('select bound_device_id from students where user_id=$1',[req.user.sub])).rows[0];
   if(!s?.bound_device_id)fail(409,'Start from your registered Android phone after face enrollment and Bluetooth notification setup.');
   result=await startMobileSession({userId:req.user.sub,deviceId:s.bound_device_id,sectionId:x.id,timetableId:t.id,durationSeconds:p.data.durationSeconds,subjectSetup:p.data});
+  result=(await pool.query('select a.*,s.display_name subject_name,array(select period from subject_attendance_periods where session_id=a.id order by period) periods from subject_attendance_sessions a join subject_attendance_subjects s on s.subject_id=a.subject_id where a.id=$1',[result.subject_session_id])).rows[0];
  }
  res.status(201).json({session:result});
 });
