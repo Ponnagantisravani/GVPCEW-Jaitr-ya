@@ -1,0 +1,7 @@
+{
+  "real_models": true,
+  "model": "opencv-sface-demo-v1",
+  "same_image_similarity": 0.9999998978720621,
+  "no_face_rejected": true,
+  "webcam_and_physical_blink": "pending user test"
+}

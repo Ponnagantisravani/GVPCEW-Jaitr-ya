@@ -89,3 +89,15 @@ python tools/sync_dataset.py --api-url https://your-render-service.onrender.com 
 ```
 
 This saves new files as `dataset/<roll_number>/<image_name>` and records checksums in `dataset/.sync-state.json`; repeated runs skip files already downloaded. Protected admin routes are `GET /api/dataset/stats`, `GET /api/dataset/manifest`, and `GET /api/dataset/images/:id`, all requiring `X-Dataset-Admin-Key`.
+
+## Automatic mobile attendance
+
+The Android app in mobile/attendance reuses the campus API and JWT accounts for approved face enrollment, FCM session alerts, rotating Bluetooth tokens, random face liveness and server-verified attendance. Stage 6 adds the automatic 60-second closure, two-minute late check-in, timetable auto-start and read-only reports in the existing portal.
+
+Before restarting the backend with mobile attendance enabled, apply its mobile migrations in order: db:migrate:mobile-attendance, db:migrate:mobile-fcm, db:migrate:mobile-ble, db:migrate:mobile-lifecycle. These are separate from db:migrate:production. Configure Firebase, Play Integrity and a calibrated face threshold as documented in [the mobile app README](mobile/attendance/README.md).
+
+See [Stage 6 changes and verification](docs/mobile-attendance-stage-6.md) for the file list, API contracts and external keep-warm helper. See [Stage 7 database load results and phone checks](docs/mobile-attendance-stage-7.md). Local database simulations pass; deployment and physical phone/range/classroom testing remain pending.
+
+## Local browser attendance demo
+
+To test coordinator start and student check-in entirely on your computer, run `npm.cmd --prefix backend run dev:local-demo` and `npm.cmd --prefix frontend run dev`. Follow [the dashboard walkthrough](docs/local-attendance-demo.md). The launcher creates separate demo tables in local PostgreSQL; webcam comparison and blink checks save separate demo results and do not update official attendance. Run `python tools/setup-local-face-models.py` once before launching.

@@ -7,7 +7,6 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.os.Bundle
 import android.os.SystemClock
-import android.util.Base64
 import android.util.Size
 import android.view.Gravity
 import android.view.WindowManager
@@ -31,10 +30,9 @@ import com.google.mlkit.vision.face.FaceDetector
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executors
 
-/** Camera frames and preview stay in RAM. Only one small preview and the average leave this activity. */
+/** Camera frames stay in RAM. Only the averaged numeric template leaves this activity. */
 class FaceEnrollmentActivity : ComponentActivity() {
     private val executor = Executors.newSingleThreadExecutor()
     private var model: MobileFaceNet? = null
@@ -43,7 +41,6 @@ class FaceEnrollmentActivity : ComponentActivity() {
     private lateinit var previewView: PreviewView
     private var provider: ProcessCameraProvider? = null
     private val samples = mutableListOf<FloatArray>()
-    private var photo: String? = null
     private var tracked: Int? = null
     private var stable = 0
     private var lastSample = 0L
@@ -113,7 +110,7 @@ class FaceEnrollmentActivity : ComponentActivity() {
                     val face=faces[0];val box=face.boundingBox
                     if(box.width()<120||box.height()<120||box.left<0||box.top<0||box.right>bitmap.width||box.bottom>bitmap.height) { stable=0;show("Move closer and keep your entire face in view");return@addOnCompleteListener }
                     if(tracked != null && face.trackingId != null && tracked != face.trackingId) {
-                        samples.forEach { it.fill(0f) };samples.clear();photo=null;stable=0;tracked=face.trackingId
+                        samples.forEach { it.fill(0f) };samples.clear();stable=0;tracked=face.trackingId
                         show("Face changed. Starting the five samples again");return@addOnCompleteListener
                     }
                     if(!FaceEnrollmentPolicy.accepts(samples.size,face.headEulerAngleY,face.headEulerAngleX,face.headEulerAngleZ,face.leftEyeOpenProbability,face.rightEyeOpenProbability)) {
@@ -126,8 +123,6 @@ class FaceEnrollmentActivity : ComponentActivity() {
                         val vector=model!!.embed(aligned)
                         if(samples.isNotEmpty()&&FaceTemplateMath.cosine(samples[0],vector)<0.50) { vector.fill(0f);stable=0;show("Keep the same face in view and turn only slightly");return@addOnCompleteListener }
                         if(samples.isEmpty()) {
-                            val bytes=ByteArrayOutputStream();aligned.compress(Bitmap.CompressFormat.JPEG,75,bytes)
-                            photo="data:image/jpeg;base64,"+Base64.encodeToString(bytes.toByteArray(),Base64.NO_WRAP)
                             tracked=face.trackingId
                         }
                         samples.add(vector);lastSample=SystemClock.elapsedRealtime();stable=0
@@ -140,7 +135,7 @@ class FaceEnrollmentActivity : ComponentActivity() {
     private fun complete() {
         val embedding=FaceTemplateMath.average(samples)
         val data=JSONObject().put("embedding_model",MobileFaceNet.MODEL).put("model_sha256",MobileFaceNet.SHA256)
-            .put("embedding",JSONArray(embedding.map { it.toDouble() })).put("sample_count",samples.size).put("preview",photo)
+            .put("embedding",JSONArray(embedding.map { it.toDouble() })).put("sample_count",samples.size)
         embedding.fill(0f);active=false
         runOnUiThread { setResult(Activity.RESULT_OK,Intent().putExtra("enrollment",data.toString()));finish() }
     }
@@ -148,7 +143,7 @@ class FaceEnrollmentActivity : ComponentActivity() {
     override fun onStop() { super.onStop();if(active)cancel("Face capture paused. Reopen registration to continue.") }
     private fun closeResources() {
         if(closed)return;closed=true
-        model?.close();detector.close();samples.forEach { it.fill(0f) };samples.clear();photo=null
+        model?.close();detector.close();samples.forEach { it.fill(0f) };samples.clear()
         executor.shutdown()
     }
     override fun onDestroy() {

@@ -1,0 +1,15 @@
+{
+  "mode": "local-browser-demo-real-postgresql",
+  "face_service": "synthetic verdicts only for SQL/HTTP integration; real model checks run separately",
+  "passed": true,
+  "checks": [
+    "disabled by default; unavailable in production; authentication required",
+    "role and section authorization; racing starts produce one 60-second session",
+    "snapshot roster and scoped reads; other-section check-in rejected",
+    "button-only bypass rejected; reference required; mismatched face, missed blink and borrowed challenge rejected",
+    "one accepted record under duplicate race; saved student result",
+    "main deadline projects absence; explicit late check-in stores LATE",
+    "terminal deadline enforced; repeated demonstration can start after completion",
+    "official attendance tables untouched"
+  ]
+}

@@ -31,7 +31,7 @@ class CampusNativeModule(private val context: ReactApplicationContext) : ReactCo
                     val pending=attendanceCapture ?: return;attendanceCapture=null
                     val payload=data?.getStringExtra("attendance")
                     if(result==Activity.RESULT_OK && payload!=null)pending.resolve(payload)
-                    else pending.reject("CAPTURE_CANCELLED",data?.getStringExtra("error") ?: "Face verification cancelled.")
+                    else pending.reject(data?.getStringExtra("error_code") ?: "CAPTURE_CANCELLED",data?.getStringExtra("error") ?: "Face verification cancelled.")
                     return
                 }
                 if(code != requestCode) return
@@ -63,16 +63,19 @@ class CampusNativeModule(private val context: ReactApplicationContext) : ReactCo
             catch(_: Exception) { capture = null; promise.reject("CAMERA_UNAVAILABLE","Front camera could not open.") }
         }
     }
-    @ReactMethod fun captureAttendance(type: String,validFor: Double,promise: Promise) {
+    @ReactMethod fun captureAttendance(type: String,validFor: Double,ownTemplate: String,minimum: Double,promise: Promise) {
         val activity=context.currentActivity
         if(activity==null) { promise.reject("NO_ACTIVITY","Open the campus app to verify attendance.");return }
-        if(type !in listOf("blink","turn_left","turn_right","smile") || !validFor.isFinite() || validFor<=0 || validFor>6000) { promise.reject("CHALLENGE_EXPIRED","Catch a fresh Bluetooth token and retry.");return }
+        if(type != "blink" || !validFor.isFinite() || validFor<=0 || validFor>6000) { promise.reject("CHALLENGE_EXPIRED","Attendance challenge expired. Retry while your window is open.");return }
         if(ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED) { promise.reject("CAMERA_DENIED","Enable Camera in app settings and retry attendance.");return }
+        val template=try { val values=org.json.JSONArray(ownTemplate);require(values.length()==192 && minimum.isFinite() && minimum>0 && minimum<1)
+            FloatArray(192) { values.getDouble(it).toFloat() }.also { require(it.all { value -> value.isFinite() } && it.any { value -> value!=0f }) }
+        } catch(_: Exception) { promise.reject("FACE_CONFIG","Your enrolled face template is unavailable.");return }
         val deadline=android.os.SystemClock.elapsedRealtime()+validFor.toLong()
         activity.runOnUiThread {
             if(capture!=null || attendanceCapture!=null) { promise.reject("CAPTURE_BUSY","Face camera is already open.");return@runOnUiThread }
             attendanceCapture=promise
-            try { activity.startActivityForResult(Intent(activity,FaceAttendanceActivity::class.java).putExtra("challenge_type",type).putExtra("deadline",deadline),attendanceCode) }
+            try { activity.startActivityForResult(Intent(activity,FaceAttendanceActivity::class.java).putExtra("challenge_type",type).putExtra("deadline",deadline).putExtra("own_template",template).putExtra("similarity_threshold",minimum),attendanceCode) }
             catch(_: Exception) { attendanceCapture=null;promise.reject("CAMERA_UNAVAILABLE","Front camera could not open.") }
         }
     }

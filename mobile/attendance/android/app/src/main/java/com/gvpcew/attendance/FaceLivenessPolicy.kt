@@ -1,6 +1,6 @@
 package com.gvpcew.attendance
 
-/** A timed neutral -> random action -> neutral sequence, never a single probability flag. */
+/** A timed eye-open -> eye-closed -> eye-open sequence, never a single probability flag. */
 class FaceLivenessPolicy(val type: String, private val deadline: Long) {
     data class Frame(val time: Long, val tracking: Int?, val yaw: Float, val pitch: Float, val roll: Float,
                      val leftEye: Float?, val rightEye: Float?, val smile: Float?)
@@ -10,12 +10,12 @@ class FaceLivenessPolicy(val type: String, private val deadline: Long) {
     private var previous = -1L
     private var since = -1L
     private var count = 0
-    init { require(type in listOf("blink", "turn_left", "turn_right", "smile")) }
+    init { require(type == "blink") }
     fun reset() { if(phase != Phase.EXPIRED) { phase=Phase.BASELINE;track=null;since=-1;count=0 } }
     fun instruction(): String = when(phase) {
-        Phase.BASELINE -> "Look straight ahead with open eyes and a relaxed mouth"
-        Phase.ACTION -> when(type) { "blink" -> "Blink once now"; "turn_left" -> "Turn your head slightly to your left"; "turn_right" -> "Turn your head slightly to your right"; else -> "Smile now" }
-        Phase.RETURN -> if(type=="smile") "Relax your smile and look straight ahead" else "Look straight ahead with both eyes open"
+        Phase.BASELINE -> "Look straight ahead with both eyes open"
+        Phase.ACTION -> "Blink once now"
+        Phase.RETURN -> "Open both eyes"
         Phase.PASSED -> "Hold still while your face is checked"
         Phase.EXPIRED -> "Face challenge expired. Try again."
     }
@@ -37,20 +37,13 @@ class FaceLivenessPolicy(val type: String, private val deadline: Long) {
         track=f.tracking
         val frontal=kotlin.math.abs(f.yaw)<=10
         val eyes=(f.leftEye ?: -1f)>=0.65f && (f.rightEye ?: -1f)>=0.65f
-        val relaxed=type!="smile" || (f.smile ?: 1f)<0.3f
         when(phase) {
-            Phase.BASELINE -> if(held(frontal && eyes && relaxed,f.time,200,3))next(Phase.ACTION)
+            Phase.BASELINE -> if(held(frontal && eyes,f.time,200,3))next(Phase.ACTION)
             Phase.ACTION -> {
-                val action=when(type) {
-                    "blink" -> frontal && (f.leftEye ?: 1f)<=0.25f && (f.rightEye ?: 1f)<=0.25f
-                    // Subject-relative directions match enrollment; preview is mirrored, model input is not.
-                    "turn_left" -> f.yaw>=16f
-                    "turn_right" -> f.yaw<=-16f
-                    else -> frontal && eyes && (f.smile ?: 0f)>=0.75f
-                }
-                if(held(action,f.time,if(type=="blink")60 else 120,2))next(Phase.RETURN)
+                val action=frontal && (f.leftEye ?: 1f)<=0.25f && (f.rightEye ?: 1f)<=0.25f
+                if(held(action,f.time,60,2))next(Phase.RETURN)
             }
-            Phase.RETURN -> if(held(frontal && eyes && relaxed,f.time,120,2))next(Phase.PASSED)
+            Phase.RETURN -> if(held(frontal && eyes,f.time,120,2))next(Phase.PASSED)
             else -> Unit
         }
         return phase

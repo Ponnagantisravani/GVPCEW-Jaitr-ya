@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Edit3, Check, Save, Share2, FolderOpen, Plus, Trash2, X, RotateCcw, Sparkles, Printer } from 'lucide-react';
 import collegeLogoUrl from '../assets/gvpcew-official-logo.png';
 
@@ -233,6 +233,15 @@ export function CalendarTemplateModal({ onClose, onSelectTemplate }) {
 }
 
 export function AcademicCalendarManagement({ role = 'academic_coordinator' }) {
+  const frame=useRef(null);
+  useEffect(()=>{
+    let pending;const measure=()=>{cancelAnimationFrame(pending);pending=requestAnimationFrame(()=>{if(!frame.current)return;const viewport=window.visualViewport?.height||window.innerHeight;const nav=document.querySelector('.bottom-nav');const bottom=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().height:0;frame.current.style.height=Math.max(90,viewport-frame.current.getBoundingClientRect().top-bottom-56)+'px';});};
+    const observer=new ResizeObserver(measure);if(frame.current?.parentElement)observer.observe(frame.current.parentElement);measure();window.addEventListener('resize',measure);window.visualViewport?.addEventListener('resize',measure);return()=>{cancelAnimationFrame(pending);observer.disconnect();window.removeEventListener('resize',measure);window.visualViewport?.removeEventListener('resize',measure);};
+  },[]);
+  return <iframe ref={frame} title="Academic Calendar" src={'/academic-calendar.html?layout=readable-white-v3' + (['admin','academic_coordinator'].includes(role) ? '' : '&mode=view')} style={{display:'block',width:'100%',height:'calc(100dvh - 240px)',border:0,borderRadius:0}}/>;
+}
+
+function LegacyAcademicCalendarManagement({ role = 'academic_coordinator' }) {
   const isEditor = role === 'academic_coordinator' || role === 'admin';
   const STORAGE_KEY = 'gvpcew_academic_calendar';
 

@@ -1,0 +1,6 @@
+{
+  "appId": "com.gvpcew.app",
+  "appName": "GVPCEW",
+  "webDir": "frontend/dist",
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}

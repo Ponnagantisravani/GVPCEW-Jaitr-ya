@@ -878,6 +878,10 @@ td { padding: 12px; border-bottom: 1px solid #edf0f5; white-space: normal; verti
 .login > section { color: #ffffff; padding: 25px 15% 0 0; }
 .login h1 { color: #ffffff; font-size: 44px; margin: 12px 0; font-family: 'Manrope', sans-serif; }
 .login .muted { color: #d6e5dc; line-height: 1.7; }
+.login form .muted { color: #52617a; }
+.server-settings { font-size: 13px; color: #52617a; }
+.server-settings summary { cursor: pointer; margin-bottom: 12px; }
+.server-settings p { line-height: 1.6; }
 .login form {
   background: #ffffff;
   border-radius: 18px;

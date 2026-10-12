@@ -45,7 +45,7 @@ attendanceSessionRouter.post('/start',managers,async(req,res)=>{
  or (not $4 and exists(select 1 from student_coordinator_sections s where s.user_id=$3 and s.academic_section_id=x.id)))`,[d.sectionId,d.subjectId,req.user.sub,req.user.roles.includes('faculty')]);
  if(!rows[0]?.faculty_id){await client.query('rollback');return res.status(403).json({message:'Your class or faculty assignment is incomplete. Ask the academic coordinator to check it.'});}
  await client.query("select pg_advisory_xact_lock(hashtext($1))",[d.sectionId+d.subjectId]);
- await client.query(`update attendance_sessions a set stopped_at=now() where a.academic_section_id=$1 and a.subject_id=$2 and a.stopped_at is null and not ${sessionResponsibility('a')}`,[d.sectionId,d.subjectId]);
+ await client.query(`update attendance_sessions a set stopped_at=now() where a.academic_section_id=$1 and a.subject_id=$2 and a.stopped_at is null and not a.mobile_mode and not ${sessionResponsibility('a')}`,[d.sectionId,d.subjectId]);
  const running=await client.query('select id from attendance_sessions where academic_section_id=$1 and subject_id=$2 and stopped_at is null and expires_at>now()',[d.sectionId,d.subjectId]);
  if(running.rowCount){await client.query('rollback');return res.status(409).json({message:'An attendance session is already active for this class and subject.'});}
  const code=crypto.randomBytes(5).toString('hex').toUpperCase();

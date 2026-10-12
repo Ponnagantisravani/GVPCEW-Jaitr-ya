@@ -1,0 +1,165 @@
+{
+  "generated_at": "2026-10-11T18:08:13.842Z",
+  "portal_load_test": {
+    "generated_at": "2026-10-11T17:41:48.908Z",
+    "students": 70,
+    "mode": "real-login-and-dashboard-routes-local-postgresql",
+    "passed": true,
+    "scenarios": [
+      {
+        "name": "complete production migration sequence installs and is repeatable",
+        "passed": true
+      },
+      {
+        "name": "70 simultaneous logins from one shared IP",
+        "requests": 70,
+        "success": 70,
+        "statuses": {
+          "200": 70
+        },
+        "p95_ms": 5075,
+        "max_ms": 5389,
+        "elapsed_ms": 5406
+      },
+      {
+        "name": "70 concurrent student sessions, five endpoints per student, round 1",
+        "requests": 350,
+        "success": 350,
+        "statuses": {
+          "200": 350
+        },
+        "p95_ms": 359,
+        "max_ms": 394,
+        "errors": []
+      },
+      {
+        "name": "70 concurrent student sessions, five endpoints per student, round 2",
+        "requests": 350,
+        "success": 350,
+        "statuses": {
+          "200": 350
+        },
+        "p95_ms": 333,
+        "max_ms": 378,
+        "errors": []
+      },
+      {
+        "name": "70 concurrent student sessions, five endpoints per student, round 3",
+        "requests": 350,
+        "success": 350,
+        "statuses": {
+          "200": 350
+        },
+        "p95_ms": 517,
+        "max_ms": 531,
+        "errors": []
+      },
+      {
+        "name": "wrong-password account limit does not block classmates",
+        "passed": true
+      }
+    ],
+    "limitations": [
+      "Local HTTP simulation; physical Wi-Fi devices and face verification are not simulated.",
+      "This measures the current computer, not an online hosting service.",
+      "Each read batch maintains 70 simultaneous HTTP requests. The separate 350-socket burst failed on local Windows and is not certified."
+    ]
+  },
+  "attendance_load_test": {
+    "generated_at": "2026-10-11T17:37:52.270Z",
+    "mode": "local-postgresql-real-routes",
+    "google_integrity": "synthetic verdicts in test process only",
+    "google_decode_delay_ms": 120,
+    "face": "unique synthetic normalized 192-value templates; no camera",
+    "main_closure": "real 60-second deadline and lifecycle worker",
+    "late_expiry": "accelerated fixture deadline",
+    "scenarios": [
+      {
+        "name": "70 simultaneous students",
+        "passed": true,
+        "students": 70,
+        "elapsed_ms": 3617,
+        "p50_ms": 2681.5,
+        "p95_ms": 2875.8,
+        "max_ms": 2878.5
+      },
+      {
+        "name": "four independent sections and racing starts",
+        "passed": true,
+        "sections": 4,
+        "students": 280,
+        "automatic_starts": 1,
+        "elapsed_ms": 8421.2,
+        "p50_ms": 7010.4,
+        "p95_ms": 7697.6,
+        "max_ms": 7796.1
+      },
+      {
+        "name": "duplicate races",
+        "passed": true,
+        "students": 70,
+        "submissions": 140,
+        "accepted": 70,
+        "rejected": 70,
+        "shared_challenge_students": 35,
+        "different_challenge_students": 35,
+        "elapsed_ms": 3685.9
+      },
+      {
+        "name": "rejection, locked rechecks, separate challenge budgets and racing closure",
+        "passed": true,
+        "rejected_attempts": 15,
+        "accepted": 0,
+        "absent": 70,
+        "closure_audits": 1
+      },
+      {
+        "name": "timetable auto-start without manual intervention",
+        "passed": true,
+        "students": 70,
+        "automatic_starts": 1,
+        "elapsed_ms": 1435,
+        "p50_ms": 1329,
+        "p95_ms": 1400.3,
+        "max_ms": 1401.2
+      },
+      {
+        "name": "main closure, late recovery and read-only reports",
+        "passed": true,
+        "students": 70,
+        "present": 56,
+        "late": 7,
+        "absent": 7,
+        "closure_materialized_lag_ms": 619,
+        "late_timings": {
+          "p50_ms": 1770.4,
+          "p95_ms": 1911.9,
+          "max_ms": 1959.4
+        }
+      }
+    ],
+    "passed": true,
+    "limitations": [
+      "Local database/HTTP timings do not establish production or Google performance.",
+      "FCM transport, native liveness, BLE proximity, real Google verdicts and physical classroom timing are not simulated."
+    ],
+    "postgresql_version": "18.6",
+    "pool_max": 10,
+    "fixture_pool_max": 4,
+    "simulator_sha256": "13dee06e4023cb266eecef9d68787a64b178d823d9a19919f7cc1f4eefa0c790",
+    "actual_migrations_applied_to_empty_test_database": true
+  },
+  "native_firebase_config_present": false,
+  "native_release_apk_present": true,
+  "native_tests_passed": 47,
+  "native_typecheck_passed": true,
+  "native_face_model_verification_passed": true,
+  "public_backend_deployed": false,
+  "ready_for_70_phone_distribution": false,
+  "remaining": [
+    "Public HTTPS hosting and populated student database",
+    "Firebase Android and FCM configuration",
+    "Play Integrity and campus signing configuration",
+    "Configured APK rebuild and physical-phone classroom tests"
+  ]
+}

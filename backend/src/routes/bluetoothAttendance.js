@@ -1,3 +1,4 @@
+import {markPresent} from '../services/subjectAttendance.js';
 import {Router} from '../utils/router.js';
 import {requireAuth,allowRoles} from '../middleware/auth.js';
 import {pool} from '../config/db.js';
@@ -72,6 +73,7 @@ bluetoothAttendanceRouter.post('/submit',async(req,res)=>{
   const fresh=await client.query('select stopped_at is null and clock_timestamp()<expires_at and clock_timestamp()<$2::timestamptz valid from attendance_sessions where id=$1 for update',[a.id,challenge.expires_at]);
   if(!fresh.rows[0].valid){await client.query('rollback');return res.status(409).json({message:'Verification finished after the class or capture expired. Capture again.'});}
   const receiptId=crypto.randomUUID();
+  await markPresent(a.id,a.student_id,client);
   await client.query('insert into attendance_session_entries(session_id,student_id) values($1,$2) on conflict do nothing',[a.id,a.student_id]);
   await client.query(`insert into attendance(student_id,subject_id,faculty_id,classroom_id,status,attendance_date)
    values($1,$2,$3,$4,'present',$5::timestamptz::date)

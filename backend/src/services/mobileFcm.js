@@ -21,7 +21,7 @@ async function accessToken(){
 export function messageFor(row,now=Date.now()){
  const remaining=Math.floor((new Date(row.expires_at).getTime()-now)/1000);
  if(remaining<=0)return null;
- return {token:row.fcm_token,data:{type:'attendance_session',session_id:row.session_id,section_id:row.academic_section_id,user_id:row.user_id,expires_at:new Date(row.expires_at).toISOString(),broadcast:row.broadcast?'true':'false'},android:{priority:'HIGH',ttl:Math.min(60,remaining)+'s',collapse_key:row.session_id}};
+ return {token:row.fcm_token,data:{type:'attendance_session',session_id:row.session_id,section_id:row.academic_section_id,user_id:row.user_id,expires_at:new Date(row.expires_at).toISOString(),broadcast:row.broadcast?'true':'false'},android:{priority:'HIGH',ttl:Math.min(1800,remaining)+'s',collapse_key:row.session_id}};
 }
 export async function sendFcm(message){
  const r=await fetch('https://fcm.googleapis.com/v1/projects/'+encodeURIComponent(process.env.FCM_PROJECT_ID)+'/messages:send',{method:'POST',headers:{Authorization:'Bearer '+await accessToken(),'Content-Type':'application/json'},body:JSON.stringify({message}),signal:AbortSignal.timeout(5000)});

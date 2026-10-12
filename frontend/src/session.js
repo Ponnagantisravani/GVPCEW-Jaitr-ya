@@ -3,18 +3,25 @@ export const rolePaths = {
   faculty: '/faculty.html', academic_coordinator: '/academic-coordinator.html', admin: '/admin.html'
 };
 
+export function assignedRoles(user) {
+  // Older API versions return a single role. An explicit empty roles list
+  // still means access has not been assigned.
+  const roles = user?.roles === undefined ? [user?.role] : user.roles;
+  return Array.isArray(roles) ? roles.filter(role => Object.hasOwn(rolePaths, role)) : [];
+}
+
 export function readSession() {
   try {
     const session = JSON.parse(localStorage.getItem('gvpcew_session') || 'null');
     if (!session || typeof session.token !== 'string' || !session.token || !session.user ||
-        !Array.isArray(session.user.roles)) return null;
-    const roles = session.user.roles.filter(role => Object.hasOwn(rolePaths, role));
+        (session.user.roles !== undefined && !Array.isArray(session.user.roles))) return null;
+    const roles = assignedRoles(session.user);
     return roles.length ? {...session, user: {...session.user, roles}} : null;
   } catch { return null; }
 }
 
 export function preferredRole(user, requested) {
-  const roles=(user?.roles||[]).filter(role=>Object.hasOwn(rolePaths,role));
+  const roles=assignedRoles(user);
   return roles.includes(requested)?requested:roles.includes(user?.role)?user.role:roles[0];
 }
 export function roleForPath(path) {

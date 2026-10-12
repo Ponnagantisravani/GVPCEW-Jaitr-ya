@@ -1,5 +1,5 @@
 import { Router } from '../utils/router.js';
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { pool } from "../config/db.js";
@@ -48,7 +48,10 @@ authRouter.post("/login", async (req, res) => {
   if (!ok) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
-  if (parsed.data.client !== 'mobile' && user.face_enrollment_status !== 'completed') {
+  // Provisioned students already have portal access. Browser signup enrollment
+  // is only a gate for accounts awaiting their first role assignment.
+  // Mobile face enrollment and attendance face checks remain separate gates.
+  if (parsed.data.client !== 'mobile' && user.face_enrollment_status !== 'completed' && !user.roles.length) {
     const student=await pool.query('select id from students where user_id=$1',[user.id]);
     const enrollmentToken=jwt.sign({sub:user.id,studentId:student.rows[0]?.id,role:'student',purpose:'face-enrollment'},env.jwtSecret,{expiresIn:'30m'});
     return res.status(403).json({message:'Complete face enrollment first.',enrollmentToken});

@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-10-10T14:19:43.476Z",
+  "jdk": "21.0.8.9",
+  "gradle": "9.2.0",
+  "sdk": ".tmp/attendance-android-sdk",
+  "sdk36": true,
+  "build_tools": [
+    "35.0.0",
+    "36.0.0"
+  ],
+  "ndk27_1_installed": false,
+  "react_android_0_85_3_aar_cached": false,
+  "cmake_installed": false,
+  "adb_devices": [],
+  "apk_outputs": [],
+  "result": "FAILED",
+  "failure": "[CXX1101] NDK27.1.12297006 did not have source.properties",
+  "elapsed_seconds": 52,
+  "gradle_plugin_tasks_executed": 10,
+  "no_downloads": true,
+  "download_attempt": {
+    "archive": "android-ndk-r27b-windows.zip",
+    "bytes": 238183904,
+    "required_bytes": 781495902,
+    "complete": false,
+    "extracted": false
+  }
+}

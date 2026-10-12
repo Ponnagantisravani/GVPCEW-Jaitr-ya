@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-11",
+  "migrationApplied": true,
+  "backendTests": 55,
+  "frontendTests": 40,
+  "postgresAndHttpChecks": 27,
+  "frontendBuild": "passed",
+  "browser": {
+    "coordinator": "passed",
+    "student": "passed",
+    "viewport": "390x844"
+  },
+  "remaining": [
+    "Requested faculty email accounts must be created/assigned through Admin User Management",
+    "Physical Android BLE, camera and Integrity verification remains untested"
+  ],
+  "batches": {
+    "rule": "First 35 by roll number in Batch 1; all remaining in Batch 2, as user delegated",
+    "sections": {
+      "1": [
+        35,
+        54
+      ],
+      "2": [
+        35,
+        41
+      ],
+      "3": [
+        35,
+        41
+      ],
+      "4": [
+        35,
+        2
+      ]
+    }
+  }
+}

@@ -32,9 +32,16 @@
     "test:student-profile": "node scripts/check-student-profile.js",
     "test:workflows": "node --test --test-timeout=30000 tests/dashboard.integration.js",
     "db:migrate:mobile-attendance": "node scripts/migrate-mobile-attendance.js",
-    "test:mobile-attendance": "node --test tests/mobile-attendance.test.js tests/mobile-enrollment.test.js tests/mobile-session-start.test.js tests/mobile-fcm.test.js tests/mobile-ble.test.js tests/mobile-submit.test.js",
+    "test:mobile-attendance": "node --test tests/mobile-attendance.test.js tests/mobile-enrollment.test.js tests/mobile-session-start.test.js tests/mobile-fcm.test.js tests/mobile-ble.test.js tests/mobile-submit.test.js tests/mobile-lifecycle.test.js",
     "db:migrate:mobile-fcm": "node scripts/migrate-mobile-fcm.js",
-    "db:migrate:mobile-ble": "node scripts/migrate-mobile-ble.js"
+    "db:migrate:mobile-ble": "node scripts/migrate-mobile-ble.js",
+    "db:migrate:mobile-lifecycle": "node scripts/migrate-mobile-lifecycle.js",
+    "test:mobile-load": "node scripts/simulate-mobile-attendance.mjs",
+    "db:migrate:local-demo": "node scripts/migrate-local-attendance-demo.js",
+    "dev:local-demo": "node scripts/start-local-attendance-demo.mjs",
+    "db:migrate:mobile-blink": "node scripts/migrate-mobile-blink.js",
+    "db:migrate:subject-attendance": "node scripts/migrate-subject-attendance.js",
+    "test:subject-attendance": "node scripts/test-subject-attendance.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",

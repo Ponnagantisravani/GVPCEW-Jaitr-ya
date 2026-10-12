@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {coveredPeriods,indiaDate} from '../src/services/subjectAttendancePolicy.js';
+const subject={subject_id:'lab',display_name:'Computer Networks Lab',kind:'lab'};
+const slot=(period,subject_id='lab',start_time=String(period),end_time=String(period+1),entry_type='lab')=>({period,subject_id,start_time,end_time,entry_type,name:'Other',code:'Other'});
+test('lab covers current and next two consecutive published periods',()=>assert.deepEqual(coveredPeriods({subject,period:1,slots:[slot(1),slot(2),slot(3),slot(4)]}),[1,2,3]));
+test('theory covers only the chosen period',()=>assert.deepEqual(coveredPeriods({subject:{...subject,kind:'theory'},period:1,slots:[slot(1),slot(2),slot(3)]}),[1]));
+test('last period clips to one; penultimate clips to two',()=>{assert.deepEqual(coveredPeriods({subject,period:7,slots:[slot(6),slot(7)]}),[7]);assert.deepEqual(coveredPeriods({subject,period:6,slots:[slot(6),slot(7)]}),[6,7]);});
+test('a different subject, break or lunch gap clips the lab block',()=>{for(const next of [slot(2,'other'),slot(2,'lab','2','3','break'),slot(2,'lab','2.5','3')])assert.deepEqual(coveredPeriods({subject,period:1,slots:[slot(1),next,slot(3)]}),[1]);});
+test('wrong subject and missing timetable are rejected, not inferred',()=>{assert.throws(()=>coveredPeriods({subject,period:1,slots:[slot(1,'other')]}),e=>e.status===409);assert.throws(()=>coveredPeriods({subject,period:1,slots:[]}),e=>e.status===409);});
+test('attendance date uses India even before UTC midnight',()=>assert.equal(indiaDate(new Date('2026-10-10T20:00:00Z')),'2026-10-11'));

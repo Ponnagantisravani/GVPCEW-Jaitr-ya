@@ -2,6 +2,7 @@ import {useEffect,useState} from 'react';
 import {AppState} from 'react-native';
 import {BleManager,ScanMode} from 'react-native-ble-plx';
 import {ApiError,validateBleToken} from './api';
+import {attendanceMilliseconds} from './attendancePolicy';
 import {checkPermissions} from './permissions';
 import {decodeManufacturerData,scanPhase,monotonicNow} from './bleProtocol';
 import type {AttendanceSession,BleReceipt,Session} from './types';
@@ -10,7 +11,7 @@ export function useBleProximity(session:Session,attendance:AttendanceSession|nul
  const [receipt,setReceipt]=useState<BleReceipt|null>(null),[phase,setPhase]=useState<ReturnType<typeof scanPhase>>('searching'),[error,setError]=useState('');
  useEffect(()=>{
   setReceipt(null);setError('');setPhase('searching');
-  if(!attendance||Date.parse(attendance.expires_at)<=Date.now())return;
+  if(!attendance||attendanceMilliseconds(attendance)<=0)return;
   const id=attendance.id;let alive=true,checking=false,lastRequest=-Infinity,accepted:BleReceipt|null=null;
   const seen=new Map<string,number>();const start=Date.now(),manager=new BleManager();
   const stop=()=>{alive=false;accepted=null;void manager.stopDeviceScan().catch(()=>{});};

@@ -10,7 +10,7 @@ interface CampusBridge {
   permissionsPrompted(): Promise<boolean>;
   markPermissionsPrompted(): Promise<boolean>;
   enrollFace(): Promise<string>;
-  captureAttendance(type:string,validFor:number):Promise<string>;
+  captureAttendance(type:string,validFor:number,ownTemplate:string,threshold:number):Promise<string>;
   cancelAttendance():Promise<boolean>;
   prepareIntegrity(project:string):Promise<boolean>;
   requestIntegrity(canonical:string):Promise<string>;
@@ -43,7 +43,7 @@ export const secureStorage = {
 };
 export async function captureEnrollment(): Promise<EnrollmentCapture> {
   const result = JSON.parse(await native().enrollFace()) as EnrollmentCapture;
-  if (result.embedding_model !== MODEL || result.model_sha256 !== MODEL_SHA256 || result.embedding?.length !== 192 || !result.embedding.every(Number.isFinite) || result.sample_count < 3 || result.sample_count > 5 || !result.preview?.startsWith('data:image/jpeg;base64,')) throw new Error('The face capture is incomplete. Capture again.');
+  if (result.embedding_model !== MODEL || result.model_sha256 !== MODEL_SHA256 || result.embedding?.length !== 192 || !result.embedding.every(Number.isFinite) || result.sample_count < 3 || result.sample_count > 5 || 'preview' in result) throw new Error('The face capture is incomplete. Capture again.');
   return result;
 }
 
@@ -74,8 +74,8 @@ export const campusFace={
  prepare:(project:string)=>native().prepareIntegrity(project),
  integrity:(canonical:string)=>native().requestIntegrity(canonical),
  cancel:()=>native().cancelAttendance(),
- async capture(type:ChallengeType,validFor:number):Promise<AttendanceCapture>{
-  const capture=JSON.parse(await native().captureAttendance(type,validFor)) as AttendanceCapture;
+ async capture(type:ChallengeType,validFor:number,ownTemplate:number[],threshold:number):Promise<AttendanceCapture>{
+  const capture=JSON.parse(await native().captureAttendance(type,validFor,JSON.stringify(ownTemplate),threshold)) as AttendanceCapture;
   if(capture.embedding_model!==MODEL||capture.model_sha256!==MODEL_SHA256||capture.challenge_type!==type||capture.liveness_result!==true||capture.sample_count!==3||!Array.isArray(capture.embedding)||capture.embedding.length!==192||!capture.embedding.every(Number.isFinite)||!capture.embedding.some(x=>x!==0)||'preview' in capture){if(Array.isArray(capture.embedding))capture.embedding.fill(0);throw new Error('Face verification was incomplete. Retry the challenge.');}
   return capture;
  },

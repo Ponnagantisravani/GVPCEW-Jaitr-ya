@@ -54,3 +54,9 @@ import {mobileEnrollmentRouter,mobileDevicesRouter} from './mobileEnrollment.js'
 router.use('/attendance',mobileAttendanceRouter);
 router.use('/mobile/enrollment',mobileEnrollmentRouter);
 router.use('/devices',mobileDevicesRouter);
+
+import {localAttendanceDemoRouter} from './localAttendanceDemo.js';
+router.use('/local-attendance-demo',localAttendanceDemoRouter);
+
+import {subjectAttendanceRouter} from './subjectAttendance.js';
+router.use('/attendance',subjectAttendanceRouter);

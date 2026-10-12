@@ -21,23 +21,24 @@ Configure android/local.properties with your SDK location; that machine-specific
 
 src/config.ts defaults to https://<your-service-name>.onrender.com/api as requested. This is a placeholder. The login address stays editable, and the app explicitly rejects placeholders until the actual service name is entered. A successful login stores the chosen address with the encrypted session. The native API transport permits HTTPS only and refuses redirects, so passwords and JWTs are not forwarded to another host. Run the Stage 1 backend migration before connecting this app.
 
-Login calls the existing /api/auth/login with client='mobile'. There is no new login server or duplicate account database. The existing /api/mobile/enrollment/status determines the required screen. Pending, rejected, legacy model and wrong-device accounts cannot reach the ready screen.
+Login calls the existing /api/auth/login with client='mobile'. There is no new login server or duplicate account database. The existing /api/mobile/enrollment/status determines the required screen. After each login or restored login, students.face_enrolled is checked before showing any dashboard. A false flag opens mandatory registration; a true flag goes to the dashboard. Attendance still requires the correct model, approved enrollment and bound phone on the server.
 
 ## Enrollment
 
-1. Enter your current password, a different 12–128-character password and confirmation.
-2. Read and accept the consent.
-3. Tap Capture face. Android asks once for camera, nearby device/Bluetooth, precise/coarse location for BLE proximity and notifications where supported. Denied camera/Bluetooth/location access opens a recovery message and app settings instead of repeated permission dialogs. Notification denial is shown separately.
-4. Native CameraX opens the front camera and bundled ML Kit tracks exactly one face. Collect front, slight left, slight right, front and front samples. Reject out-of-frame/small faces, closed eyes, excessive pitch/roll, poor light/focus and changes of tracked face. There is a 90-second capture timeout. Side yaw stays within the range where ML Kit supports eye classification. Capture stops on backgrounding or cancellation.
-5. One MobileFaceNet implementation aligns the eye landmarks on an upright unmirrored image, resizes to 112×112 RGB, normalizes channels as (value−127.5)/128, generates 192 FLOAT32 values and L2-normalizes each sample. It averages the five samples and L2-normalizes the result. Attendance will reuse this exact class/model in Stage 5.
-6. The app shows one small preview, then posts only the averaged numeric template, model identifier/hash, sample count, consent, device binding, password change and that preview to /api/mobile/enrollment/setup. Camera frames are never stored as files or sent to the backend. On cancellation/backgrounding/submission, transient biometric data is discarded.
-7. Await administrator approval. Only admin review/reset routes can approve, reject or reset enrollment; students cannot replace their enrolled template. Passwords are not persisted in device storage.
+1. Read and accept face enrollment consent, then tap Register face.
+2. The front camera collects five samples: front, slightly left, slightly right, front and front. CameraX and bundled ML Kit require one tracked, well-lit face.
+3. The shared, pinned MobileFaceNet model creates 192 numeric values per frame. Samples are averaged and L2-normalized on the phone.
+4. The app automatically posts the numeric template and model/device/consent metadata to /api/mobile/enrollment/setup. It uploads no photographs, previews or camera frames, and does not change the login password.
+5. The backend saves against the authenticated student's row/roll number, binds the phone, sets face_enrolled=true, enrolled_at=clock_timestamp(), and enrollment_status=approved. The app opens the dashboard immediately.
+6. Only an admin reset clears face_enrolled and enrolled_at and permits registration again. Existing enrollments are preserved.
+
+For existing mobile databases, run npm.cmd --prefix backend run db:migrate:mobile-blink before restarting the updated backend. Fresh installations receive enrolled_at from the base mobile migration.
 
 ## Device and privacy
 
 The device id is a SHA-256 of the Android signing-scoped ANDROID_ID plus the app package. It is stable across ordinary restarts and reinstall with the same signing identity, subject to Android reset/user/signing behavior. Changes require an admin reset. IDs do not provide hardware attestation; Play Integrity is added to attendance in Stage 5.
 
-JWT/account/address state is encrypted with AES-GCM using an Android Keystore key. Android backup is disabled. Camera and account screens block screenshots. No biometric frames, preview, password or face template are saved in the app's preferences. The backend holds the approved numeric template until reset/account deletion; previews are deleted on review and access expires after seven days. Schedule the Stage 1 purge script for physical expiry deletion in Stage 6.
+JWT/account/address state is encrypted with AES-GCM using an Android Keystore key. Android backup is disabled. Camera and account screens block screenshots. No biometric frames, preview, password or face template are saved in the app's preferences. The backend holds the approved numeric template until reset/account deletion; New enrollment creates no preview. Legacy preview cleanup remains available.
 
 Model provenance, exact checksum, tensor shapes and preprocessing are recorded in model-manifest.json. The model comes from the pinned Apache-2.0 upstream repository; its license is in licenses/. Do not substitute a different asset or preprocessing under mobilefacenet-v1. Production matching thresholds still need calibration on representative phones/faces; the app does not invent an attendance threshold.
 
@@ -79,8 +80,22 @@ Test with real phones: coordinator/helper/students together, denied permissions,
 
 ## Stage 5: automatic face verification
 
-Once a classroom BLE token is server-validated, the approved student automatically enters the front camera with a fresh random challenge. Timed neutral/action/neutral sequences use ML Kit probabilities and head angles. The shared MobileFaceNet model generates three fresh frontal vectors after liveness. The app sends only the normalized numeric template and request-bound Standard Play Integrity token; the backend checks the student's own template and confirms Present. Failed attempts require Retry. Existing attendance and uncertain network commits are recovered from the authenticated own-record endpoint.
+After the student taps the session notification and a classroom BLE token is automatically caught and server-validated, the front camera opens with one action: blink. ML Kit requires both eyes open, closed, then open on the same tracked face. Fresh frontal embeddings immediately after that blink are compared silently to the logged-in student’s own template using the server-configured threshold. The model is the same MobileFaceNet used at registration. A mismatch displays "Face not recognized, try again" and automatically retries, with at most three challenges in the session window. The server independently recomputes similarity and checks BLE, expiry, roster, binding, integrity and duplicate attendance before confirming. Success closes the camera and shows green "Attendance marked" feedback. Existing attendance and uncertain network commits are recovered from the authenticated own-record endpoint.
 
 Configure the backend's public PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER along with its existing server-only service account, package and signing-certificate settings. No key is bundled in the app. The PLAY_RECOGNIZED policy requires a recognized app/version/certificate; no fake/debug verdict is accepted. Missing configuration fails closed.
 
-Run npm run typecheck, npm test -- --runInBand and npm run verify:model here; run npm run test:mobile-attendance in backend. Native liveness/hash tests are under android/app/src/test. The isolated Android camera/integrity compilation passed; full APK integration and real-phone attestation still need verification. See [Stage 5 changes, timing and configuration](../../docs/mobile-attendance-stage-5.md). Stage 6 awaits approval.
+Run npm run typecheck, npm test -- --runInBand and npm run verify:model here; run npm run test:mobile-attendance in backend. Native liveness/hash tests are under android/app/src/test. The isolated Android camera/integrity compilation passed; full APK integration and real-phone attestation still need verification. See [Stage 5 changes, timing and configuration](../../docs/mobile-attendance-stage-5.md). Stage 6 is implemented; see the lifecycle and report notes below.
+
+## Stage 6: closure, late attendance and reports
+
+The server closes the main window after 60 seconds and records Absences for unmatched roster students. The app discovers the current BLE, two-minute late or closed window under the existing JWT and bound-device check. Late check-in uses a fresh blink challenge, the same camera/model and Play Integrity, and the server’s own template match. It requires an explicit tap and never asks for a Bluetooth token. Successful late results show Present (Late) and are flagged for teacher review.
+
+Apply npm run db:migrate:mobile-lifecycle in backend after the previous mobile migrations, then restart the backend. The lifecycle worker reconciles expired sessions once per second; submissions enforce server expiry even before the worker writes absence rows. Published timetable periods auto-start after a configurable 15-second grace using an assigned, enrolled coordinator’s capable registered phone. Automatic start is attempted only in the first two minutes of the period.
+
+The existing portal now includes coordinator live counts/unmarked students, private student session history and faculty/academic-coordinator reports. Reports become available after the main window; they remain provisional during late recovery and become final when it ends. Web attendance views provide read-only access to mobile records.
+
+For a sleeping backend, run tools/attendance-keep-warm.mjs from a separate awake computer with the real HTTPS /api address. Keep the backend and database running before and during classes. See [Stage 6 files, API contracts, migration and hosting instructions](../../docs/mobile-attendance-stage-6.md). No production migration, uptime, full APK or real-phone classroom result is claimed. Stage 7 awaits approval as requested.
+
+## Stage 7 validation
+
+See [the database load report and reproducible runner](../../docs/mobile-attendance-stage-7.md) and [physical phone acceptance checklist](../../docs/mobile-attendance-phone-tests.md). Local simulations exercise actual routes and SQL with synthetic face/Google proofs; phone and classroom results remain pending.

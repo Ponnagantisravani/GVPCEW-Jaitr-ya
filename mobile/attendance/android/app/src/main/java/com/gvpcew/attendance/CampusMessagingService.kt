@@ -26,6 +26,7 @@ class CampusMessagingService : FirebaseMessagingService() {
             if(Build.VERSION.SDK_INT>=33&&ContextCompat.checkSelfPermission(this,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)return
             val id=data.getValue("session_id").hashCode()
             val intent=Intent(this,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            data.forEach { (key,value) -> intent.putExtra(key,value) }
             val tap=PendingIntent.getActivity(this,id,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             val remaining=java.time.Instant.parse(data.getValue("expires_at")).toEpochMilli()-System.currentTimeMillis()
             val notification=NotificationCompat.Builder(this,"attendance").setSmallIcon(R.drawable.ic_attendance_notification)

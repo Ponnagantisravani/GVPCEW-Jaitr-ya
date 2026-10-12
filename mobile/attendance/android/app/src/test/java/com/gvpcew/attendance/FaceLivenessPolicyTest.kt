@@ -11,26 +11,26 @@ class FaceLivenessPolicyTest {
         p.accept(frame(500));p.accept(frame(650));assertEquals(FaceLivenessPolicy.Phase.PASSED,p.phase)
     }
     @Test fun stillImageAndClosedEyesNeverPass() {
-        for(type in listOf("blink","turn_left","turn_right","smile")) {
+        for(type in listOf("blink")) {
             val p=FaceLivenessPolicy(type,6000);for(t in 0L..5000L step 100)p.accept(frame(t))
             assertNotEquals(FaceLivenessPolicy.Phase.PASSED,p.phase)
         }
         val p=FaceLivenessPolicy("blink",6000);for(t in 0L..5000L step 100)p.accept(frame(t,eye=0f))
         assertEquals(FaceLivenessPolicy.Phase.BASELINE,p.phase)
     }
-    @Test fun randomTurnDirectionAndReturnAreRequired() {
-        for(type in listOf("turn_left","turn_right")) {
-            val p=FaceLivenessPolicy(type,6000);baseline(p);val target=if(type=="turn_left")20f else -20f
-            p.accept(frame(300,y=-target));p.accept(frame(450,y=-target));assertEquals(FaceLivenessPolicy.Phase.ACTION,p.phase)
-            p.accept(frame(550,y=target));p.accept(frame(700,y=target));assertEquals(FaceLivenessPolicy.Phase.RETURN,p.phase)
-            p.accept(frame(800));p.accept(frame(950));assertEquals(FaceLivenessPolicy.Phase.PASSED,p.phase)
+    @Test fun otherActionsAreRejectedAndTrackingMustStayContinuous() {
+        for(type in listOf("turn_left","turn_right","smile")) {
+            try { FaceLivenessPolicy(type,6000);fail("Only blink is allowed") } catch(_: IllegalArgumentException) { }
         }
-    }
-    @Test fun smileRequiresRelaxedSmileRelaxedAndValidTracking() {
-        val p=FaceLivenessPolicy("smile",6000);baseline(p);p.accept(frame(300,smile=1f));p.accept(frame(450,smile=1f));assertEquals(FaceLivenessPolicy.Phase.RETURN,p.phase)
-        p.accept(frame(550));p.accept(frame(700));assertEquals(FaceLivenessPolicy.Phase.PASSED,p.phase)
         val switched=FaceLivenessPolicy("blink",6000);baseline(switched);switched.accept(frame(300,eye=0f,id=2));assertEquals(FaceLivenessPolicy.Phase.BASELINE,switched.phase)
         val unknown=FaceLivenessPolicy("blink",6000);unknown.accept(frame(0,id=null));assertEquals(FaceLivenessPolicy.Phase.BASELINE,unknown.phase)
+    }
+    @Test fun oneClosedEyeAndMissingEyeProbabilitiesCannotPassBlink() {
+        val p=FaceLivenessPolicy("blink",6000);baseline(p)
+        for(t in 300L..900L step 100)p.accept(frame(t,eye=0f).copy(rightEye=1f))
+        assertEquals(FaceLivenessPolicy.Phase.ACTION,p.phase)
+        for(t in 1000L..1500L step 100)p.accept(frame(t,eye=0f).copy(rightEye=null))
+        assertEquals(FaceLivenessPolicy.Phase.ACTION,p.phase)
     }
     @Test fun missingFramesInvalidPoseAndExpiryResetOrReject() {
         val p=FaceLivenessPolicy("blink",2000);baseline(p);p.accept(frame(900,eye=0f));assertEquals(FaceLivenessPolicy.Phase.BASELINE,p.phase)

@@ -1,0 +1,16 @@
+{
+  "file": "C:\\Users\\SRAVANI\\Documents\\GVPCEW APP\\GVPCEW APP (5)\\GVPCEW APP\\build\\GVPCEW-bluetooth-test.apk",
+  "bytes": 117829110,
+  "sha256": "21ff93c23e9e82607359f4a5ececd61764afe4d62ee6a56bc46a4f8b1977ce98",
+  "bundled_javascript": true,
+  "native_bluetooth_scanner": true,
+  "face_models": [
+    "assets/mobilefacenet-v1.tflite",
+    "assets/models_bundled/fssd_25_8bit_gray_v2.tflite",
+    "assets/models_bundled/fssd_25_8bit_v2.tflite",
+    "assets/models_bundled/fssd_medium_8bit_gray_v5.tflite",
+    "assets/models_bundled/fssd_medium_8bit_v5.tflite"
+  ],
+  "development_signing": true,
+  "ready_for_class_distribution": false
+}

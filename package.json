@@ -11,5 +11,10 @@
     "test": "npm --prefix frontend test && npm --prefix backend test",
     "db:migrate:production": "npm --prefix backend run db:migrate:production",
     "db:create-admin": "npm --prefix backend run db:create-admin"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
   }
 }

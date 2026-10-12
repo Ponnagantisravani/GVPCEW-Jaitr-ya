@@ -28,8 +28,13 @@ insert into student_coordinator_sections(user_id,academic_section_id)
  on conflict do nothing;
 insert into access_migrations(name) values('coordinator-own-section-v1') on conflict do nothing;
 -- Academic coordinators receive no automatic department or institution grant.
-create or replace view faculty_assignments as
- select distinct faculty_id,subject_id,academic_section_id from timetable where status='published';
+-- Later faculty migrations replace this compatibility view with a richer
+-- relation. Preserve that relation when re-running production migrations.
+do $$ begin
+ if to_regclass('public.faculty_assignments') is null then
+  execute 'create view faculty_assignments as select distinct faculty_id,subject_id,academic_section_id from timetable where status=''published''';
+ end if;
+end $$;
 alter table syllabi add column if not exists academic_section_ids uuid[] not null default '{}';
 alter table syllabi add column if not exists department_id uuid references departments(id);
 update syllabi sy set department_id=d.id from departments d where sy.department_id is null and lower(trim(sy.department))=lower(trim(d.name));

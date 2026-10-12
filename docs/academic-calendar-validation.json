@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-10-11",
+  "implementation": "frontend/public/academic-calendar.html",
+  "dashboard": "frontend/src/AcademicCalendarManagement.jsx",
+  "default_exam_days_checked": 42,
+  "working_week_combinations": {
+    "valid": 120,
+    "correctly_rejected": 7,
+    "total": 127
+  },
+  "browser_viewports": [
+    1440,
+    390
+  ],
+  "browser_checks": [
+    "template warning",
+    "generate default calendars",
+    "academic and holidays views",
+    "edit",
+    "publish",
+    "reset last published",
+    "semester validation",
+    "read-only viewer",
+    "print-only paper"
+  ],
+  "persistence": "Browser localStorage; same browser origin only",
+  "template": "Preserved mixed 2025/2026 dates; normalized malformed 21-092026 to 21-09-2026 with visible warning",
+  "public_holidays": "Uses supplied 2026 and predicted 2027 dates",
+  "result": "passed"
+}

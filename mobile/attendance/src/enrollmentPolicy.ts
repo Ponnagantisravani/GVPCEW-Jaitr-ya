@@ -2,11 +2,8 @@ import type {EnrollmentStatus} from './types';
 export const MODEL = 'mobilefacenet-v1';
 export const MODEL_SHA256 = 'be4bc7cfc53f7bc336d0f28b1ab92535f618c913a422b683210750f6b5354854';
 export function enrollmentScreen(status: EnrollmentStatus, deviceId: string): 'setup' | 'pending' | 'rejected' | 'wrong-device' | 'ready' {
-  if (status.bound_device_id && status.bound_device_id !== deviceId) return 'wrong-device';
-  if (status.enrollment_status === 'pending') return 'pending';
-  if (status.enrollment_status === 'rejected') return 'rejected';
-  if (status.setup_required || status.embedding_model !== MODEL || status.enrollment_status !== 'approved') return 'setup';
-  return 'ready';
+  // The server flag is authoritative; only an admin reset reopens registration.
+  return status.face_enrolled === true ? 'ready' : 'setup';
 }
 export function validatePassword(current: string, next: string, confirmation: string): string | null {
   if (!current) return 'Enter your current password.';

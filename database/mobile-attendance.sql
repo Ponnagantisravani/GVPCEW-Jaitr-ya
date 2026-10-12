@@ -2,6 +2,7 @@
 alter table students add column if not exists face_embedding double precision[];
 alter table students add column if not exists embedding_model text not null default 'legacy-unknown';
 alter table students add column if not exists face_enrolled boolean not null default false;
+alter table students add column if not exists enrolled_at timestamptz;
 alter table students add column if not exists enrollment_status text not null default 'required' check(enrollment_status in ('required','pending','approved','rejected'));
 alter table students add column if not exists bound_device_id text;
 alter table students add column if not exists mobile_consent_at timestamptz;

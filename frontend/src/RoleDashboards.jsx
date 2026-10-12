@@ -1,3 +1,5 @@
+import {StudentSubjectAttendance,FacultySubjectAttendance} from './SubjectAttendance.jsx';
+import {LocalAttendanceAlerts,CoordinatorMobileAttendance,MobileAttendanceHistory,MobileAttendanceReports} from './MobileAttendance.jsx';
 import { AcademicManagement as LiveAcademicManagement, AcademicReports as LiveAcademicReports, NotificationCenter, SectionAssignment, StudentAssignments, AttendanceSessionControl, StudentCheckIn } from './LiveWorkspaces.jsx';
 import { ClassSectionManagement } from './ClassSectionManagement.jsx';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -48,6 +50,7 @@ const menus = {
   faculty: [
     'My Profile', 'My Subjects', 'My Classes', 'My Timetable', 'Syllabus', 'Academic Calendar', 'Notifications',
     'Attendance',
+    'Mobile Attendance Reports',
     'Assignments',
     'Marks',
     'My Students',
@@ -58,9 +61,9 @@ const menus = {
     'Academic Reports',
     'Exam Schedule'
   ],
-  academic_coordinator: ['Timetable Management', 'Syllabus', 'Conflict Detection', 'Class & Section Management', 'Academic Calendar', 'Exam Schedule', 'Academic Announcements', 'Academic Reports'],
+  academic_coordinator: ['Timetable Management', 'Syllabus', 'Conflict Detection', 'Class & Section Management', 'Academic Calendar', 'Exam Schedule', 'Academic Announcements', 'Academic Reports', 'Mobile Attendance Reports'],
   student: ['Academic Calendar', 'Mark Attendance', 'Syllabus', 'Exam Schedule', 'Digital ID', 'Student Profile', 'Attendance', 'My Timetable', 'My Subjects', 'My Faculty', 'Assignments', 'Internal Marks & Results', 'Leave Requests', 'Notices & Announcements', 'Notifications'],
-  student_coordinator: ['Attendance Session', 'Class Timetable', 'Class Students', 'Class Attendance', 'Class Performance', 'Class Assignments', 'Class Announcements', 'Class Information', 'Syllabus', 'Academic Calendar', 'Exam Schedule', 'Notifications', 'Session QR & Timer']
+  student_coordinator: ['Attendance Session', 'Class Timetable', 'Class Students', 'Class Attendance', 'Class Performance', 'Class Assignments', 'Class Announcements', 'Class Information', 'Syllabus', 'Academic Calendar', 'Exam Schedule', 'Notifications', 'Attendance Status']
 };
 
 const headlines = {
@@ -994,7 +997,7 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
     'Class & Section Management': 'Manage classroom allocations, sections, and class incharge assignments.',
     'Academic Reports': 'View institutional analytics and academic performance summaries.',
     'Section Assignment': 'Assign selected students to their official department and class section.',
-    'Attendance Session': 'Start, manage, and close secure attendance sessions for your class.',
+    'Attendance Session': 'Start in the Android app and follow your class attendance here.',
     'Class Timetable': 'View the published class timetable with subjects, times, and rooms.',
     'Class Announcements': 'Publish and review important updates for your class.',
     'Class Information': 'View official class subjects, sections, and faculty details.',
@@ -1061,6 +1064,7 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
         </header>
 
         {error && <p className="error" style={{ marginBottom: '16px' }}>{error}</p>}
+        {['student','student_coordinator'].includes(role) && <LocalAttendanceAlerts onOpen={()=>onNavigate(role==='student'?'Attendance':'AttendanceSession')}/>}
         {timetableAlerts.reminder && <aside className="timetable-reminder-popup" role="alert"><Bell /><div><strong>{timetableAlerts.reminder.title}</strong><p>{timetableAlerts.reminder.message}</p></div><button onClick={()=>{onNavigate(timetableAlerts.reminder.target);timetableAlerts.dismiss();}}>Open timetable</button><button className="timetable-reminder-close" aria-label="Dismiss class reminder" onClick={timetableAlerts.dismiss}>×</button></aside>}
 
         {role === 'student' && student?.profile && !student.profile.academic_section_id && (
@@ -1160,10 +1164,14 @@ function Workspace({ role, title, data, student, name, canPublish, canSessions, 
     content=<MyFaculty/>;
   } else if(title==='Responsibilities & Access'){
     content=<AccessResponsibilities/>;
-  } else if(role==='student_coordinator'&&['Class Students','Class Attendance','Class Performance','Class Assignments','Class Information'].includes(title)){
+  } else if(role==='student_coordinator'&&['Class Students','Class Performance','Class Assignments','Class Information'].includes(title)){
     content=<CoordinatorWorkspace title={title}/>;
+  } else if (role==='student_coordinator'&&['Attendance Session','Class Attendance','Attendance Status','Session QR & Timer'].includes(title)) {
+    content=<CoordinatorMobileAttendance/>;
+  } else if(title==='Mobile Attendance Reports'&&['faculty','academic_coordinator','admin'].includes(role)){
+    content=<MobileAttendanceReports/>;
   } else if (title === 'Mark Attendance') {
-    content = <StudentCheckIn/>;
+    content = <MobileAttendanceHistory guidance/>;
   } else if (title === 'User Management') {
     content = <UserAccessManagement users={data.users || []} reload={reload} />;
   } else if (title === 'Timetable Management' || title.includes('Timetable') || title === 'Conflict Detection' || title.includes('Timetable Monitoring')) {
@@ -1181,7 +1189,7 @@ function Workspace({ role, title, data, student, name, canPublish, canSessions, 
   } else if (title.includes('Subject') || title.includes('Class Information')) {
     content = <Table columns={['Code', 'Subject Title', 'Department', 'Faculty Incharge']} rows={subjects} />;
   } else if (title === 'Attendance' && role === 'student') {
-    content = <Table columns={['Course Code', 'Subject Title', 'Classes Held', 'Classes Attended', 'Attendance %']} rows={studentAttendance} />;
+    content = <><StudentSubjectAttendance/><MobileAttendanceHistory/><h3>Subject attendance totals</h3><Table columns={['Course Code', 'Subject Title', 'Classes Held', 'Classes Attended', 'Attendance %']} rows={studentAttendance} /></>;
   } else if (title.includes('Assignments')) {
     content = <StudentAssignments assignments={student.assignments||[]} reload={reload}/>;
   } else if (title === 'Leave Requests' && role === 'student') {
@@ -1223,6 +1231,8 @@ function Workspace({ role, title, data, student, name, canPublish, canSessions, 
         <ReminderCenter role={role} />
       </>
     );
+  } else if (title === 'Attendance' && role === 'faculty') {
+    content = <FacultySubjectAttendance/>;
   } else if ((title.includes('Attendance') || title.includes('Session')) && canSessions) {
     content = <AttendanceControl subjects={data.subjects} onChanged={reload} />;
   } else if (title === 'Student Profile') {

@@ -1,6 +1,6 @@
 import {test, beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
-import {readSession, rememberAttendanceLink, destinationForRole,preferredRole,roleForPath,accountStorageKey} from '../src/session.js';
+import {readSession, rememberAttendanceLink, destinationForRole,preferredRole,roleForPath,accountStorageKey,assignedRoles} from '../src/session.js';
 const storage = () => { const values = new Map(); return {getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value)),removeItem:key=>values.delete(key)}; };
 beforeEach(()=>{globalThis.localStorage=storage();globalThis.sessionStorage=storage();globalThis.window={location:{pathname:'/student.html',search:''}};});
 test('malformed and incomplete sessions return to sign-in',()=>{
@@ -9,6 +9,16 @@ test('malformed and incomplete sessions return to sign-in',()=>{
 test('only known portal roles are used for navigation',()=>{
  localStorage.setItem('gvpcew_session',JSON.stringify({token:'abc',user:{roles:['unknown','student']}}));
  assert.deepEqual(readSession().user.roles,['student']);
+});
+
+test('legacy single-role login responses can open a dashboard without bypassing explicit access lists',()=>{
+ assert.equal(preferredRole({role:'student'}),'student');
+ localStorage.setItem('gvpcew_session',JSON.stringify({token:'abc',user:{role:'student'}}));
+ assert.deepEqual(readSession().user.roles,['student']);
+ assert.deepEqual(assignedRoles({role:'admin',roles:[]}),[]);
+ assert.deepEqual(assignedRoles({role:'admin',roles:['student']}),['student']);
+ assert.equal(preferredRole({role:'unknown'}),undefined);
+ assert.equal(preferredRole({role:'admin',roles:'admin'}),undefined);
 });
 test('attendance QR destination survives sign-in and is consumed once',()=>{
  window.location.search='?attendanceCode=ab12345678';rememberAttendanceLink();

@@ -19,7 +19,13 @@ export function createApp() {
   }} : false }));
   app.use(cors({ origin(origin, callback) { callback(null, !origin || env.allowedOrigins.includes(origin)); } }));
   app.use(express.json({ limit: '25mb' }));
-  app.use('/api/auth/login', rateLimit({ windowMs: 15*60*1000, limit: 30, standardHeaders: true, legacyHeaders: false, skipSuccessfulRequests: true }));
+  // A classroom can share one public IP. Pending successful requests count
+  // against the IP budget until they finish, so leave room for a class burst.
+  app.use('/api/auth/login', rateLimit({ windowMs: 15*60*1000, limit: 300, standardHeaders: true, legacyHeaders: false, skipSuccessfulRequests: true,
+    message: {message:'Too many sign-in attempts from this network. Please try again later.'} }));
+  app.use('/api/auth/login', rateLimit({ windowMs: 15*60*1000, limit: 10, standardHeaders: true, legacyHeaders: false, skipSuccessfulRequests: true,
+    keyGenerator: req => typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase().slice(0,254) : 'invalid-email',
+    message: {message:'Too many unsuccessful sign-in attempts for this account. Please try again in 15 minutes.'} }));
   app.use('/api/auth/register', rateLimit({ windowMs: 60*60*1000, limit: 10, standardHeaders: true, legacyHeaders: false }));
   app.use('/api/enrollment', rateLimit({ windowMs: 15*60*1000, limit: 40, standardHeaders: true, legacyHeaders: false }));
   app.use(morgan(env.production ? 'combined' : 'dev'));

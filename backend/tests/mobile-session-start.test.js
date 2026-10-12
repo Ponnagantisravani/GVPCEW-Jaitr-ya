@@ -11,13 +11,13 @@ test('start requires assigned coordinator and bound phone; transaction queues on
  const query=async(sql,args=[])=>{
   calls.push({sql,args});const result=(rows=[],rowCount=rows.length)=>({rows,rowCount});
   if(sql.includes('from users u left join user_roles'))return result([{id:uid,roles,role:roles[0]}]);
-  if(sql==='select * from students where user_id=$1')return result([{id:sid,academic_section_id:section,face_enrolled:true,embedding_model:'mobilefacenet-v1',enrollment_status:'approved',bound_device_id:device}]);
+  if(sql.startsWith('select * from students where user_id=$1'))return result([{id:sid,academic_section_id:section,face_enrolled:true,embedding_model:'mobilefacenet-v1',enrollment_status:'approved',bound_device_id:device}]);
   if(sql.startsWith('select 1 from mobile_fcm_devices'))return result([],capable?1:0);
   if(sql.startsWith('select bound_device_id'))return result([{bound_device_id:device}]);
   if(sql.startsWith('select 1 from student_coordinator_sections'))return result([],assigned?1:0);
   if(sql.startsWith('select t.*,x.section_name'))return result([{id:period,subject_id:period,section_name:'CSE-A'}]);
   if(sql.startsWith('select 1 from attendance_sessions'))return result([],created?1:0);
-  if(sql.startsWith('insert into attendance_sessions')){created=true;return result([{id,academic_section_id:section,period,starts_at:new Date(),expires_at:new Date(Date.now()+60000),status:'open'}]);}
+  if(sql.startsWith('insert into attendance_sessions')){created=true;return result([{id,academic_section_id:section,period,starts_at:new Date(),expires_at:new Date(Date.now()+60000),late_expires_at:new Date(Date.now()+180000),status:'open'}]);}
   if(sql.startsWith('select t.id timetable_id'))return result([{timetable_id:period,section_id:section,session_id:created?id:null}]);
   if(sql.startsWith('select a.id,a.academic_section_id'))return result(created?[{id,section_id:section}]:[]);
   return result([],1);
@@ -27,12 +27,14 @@ test('start requires assigned coordinator and bound phone; transaction queues on
  const body={section_id:section,timetable_id:period,device_id:device};const post=(path,value)=>fetch(base+path,{method:'POST',headers,body:JSON.stringify(value)});
  try{
   let r=await fetch(base+'/attendance/start-options',{headers});assert.equal(r.status,200);assert.equal((await r.json()).periods[0].section_id,section);
+  r=await post('/attendance/session/start',{...body,duration_seconds:29});assert.equal(r.status,400);r=await post('/attendance/session/start',{...body,duration_seconds:1801});assert.equal(r.status,400);
   roles=['student'];r=await post('/attendance/session/start',body);assert.equal(r.status,403);roles=['student_coordinator'];
   r=await post('/attendance/session/start',{...body,device_id:'wrong_device_12345'});assert.equal(r.status,403);
   capable=false;r=await post('/attendance/session/start',body);assert.equal(r.status,409);capable=true;
   assigned=false;r=await post('/attendance/session/start',body);assert.equal(r.status,403);assigned=true;
   r=await post('/attendance/session/start',{...body,section_id:period});assert.equal(r.status,403);
-  r=await post('/attendance/session/start',body);assert.equal(r.status,201);assert.equal((await r.json()).session.id,id);
+  r=await post('/attendance/session/start',{...body,duration_seconds:300});assert.equal(r.status,201);assert.equal((await r.json()).session.id,id);
+  const sessionInsert=calls.find(c=>c.sql.startsWith('insert into attendance_sessions'));assert.equal(sessionInsert.args[9],300);assert(sessionInsert.sql.includes('$10::integer'));assert.equal(calls.filter(c=>c.sql.startsWith('insert into ble_tokens')).length,38);
   const roster=calls.find(c=>c.sql.startsWith('insert into session_roster'));assert(roster.sql.includes("enrollment_status='approved'"));assert.equal(roster.args[1],section);
   const enqueue=calls.findIndex(c=>c.sql.startsWith('insert into mobile_push_outbox'));assert(enqueue>0);assert(calls.slice(enqueue).some(c=>c.sql==='commit'));assert.equal(calls[enqueue].args[0],id);assert(calls.some(c=>c.sql.startsWith('insert into broadcasters')&&c.sql.includes('d.can_advertise')));
   r=await post('/attendance/session/start',body);assert.equal(r.status,409);assert.equal(calls.filter(c=>c.sql.startsWith('insert into attendance_sessions')).length,1);

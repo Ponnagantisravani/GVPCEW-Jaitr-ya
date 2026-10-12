@@ -1,0 +1,27 @@
+{
+  "scope": "Android mobile attendance enrollment gate and blink-only 1-to-1 verification",
+  "backend_full_suite": {
+    "passed": 47,
+    "failed": 0
+  },
+  "mobile_full_suite": {
+    "passed": 46,
+    "failed": 0
+  },
+  "native_jvm": {
+    "passed": 11,
+    "failed": 0
+  },
+  "native_camera_compile": "PASS: isolated Android library using nine current camera/model/integrity source files",
+  "model_contract": "PASS: pinned MobileFaceNet SHA-256 and 192 FLOAT32 tensor contract",
+  "migration_applied": false,
+  "full_apk_built": false,
+  "physical_phone_tested": false,
+  "final_focused_checks": {
+    "admin_reset_and_submission_routes": {
+      "passed": 8,
+      "failed": 0
+    },
+    "note": "Includes admin-only reset clearing enrolled_at, fresh re-enrollment, mismatch challenge consumption and duplicate rejection."
+  }
+}

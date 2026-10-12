@@ -1,0 +1,42 @@
+# Deployment template only. The resource plan is paid; review it before deploying.
+# Public HTTPS is required for phones using mobile data or different Wi-Fi.
+services:
+  - type: web
+    name: gvpcew-attendance-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.backend
+    plan: 1c-2g
+    numInstances: 1
+    healthCheckPath: /api/health
+    preDeployCommand: node scripts/migrate-production.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENROLLMENT_API_KEY
+        generateValue: true
+      - key: DATASET_ADMIN_API_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL_MODE
+        value: require
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: FCM_PROJECT_ID
+        sync: false
+      - key: FCM_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: PLAY_INTEGRITY_PACKAGE_NAME
+        value: com.gvpcew.attendance
+      - key: PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER
+        sync: false
+      - key: PLAY_INTEGRITY_CERT_SHA256
+        sync: false
+      - key: PLAY_INTEGRITY_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: MOBILE_FACE_THRESHOLD
+        sync: false

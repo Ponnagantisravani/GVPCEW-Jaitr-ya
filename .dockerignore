@@ -11,3 +11,10 @@ venv/
 *.mp4
 *.avi
 *.mov
+**/node_modules/
+.tmp/
+**/.env
+**/.env.*
+.codex/
+.agents/
+.aws/

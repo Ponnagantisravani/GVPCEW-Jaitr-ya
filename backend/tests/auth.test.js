@@ -61,8 +61,11 @@ test('API authentication enforces current access and separates enrollment tokens
   assigned = true;
   const register = await get(registerPath, session);
   assert.equal(register.status, 200);
-  assert.deepEqual(registerValues, [subjectId, '2026-09-01', 'faculty-id']);
+  assert.deepEqual(registerValues, [subjectId, '2026-09-01', 'faculty-id', undefined]);
   assert.equal((await register.json()).attendance[0].status, 'present');
+  const sectionId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+  assert.equal((await get(registerPath + '&sectionId=' + sectionId, session)).status, 200);
+  assert.deepEqual(registerValues, [subjectId, '2026-09-01', 'faculty-id', sectionId]);
   const missing = await get('/does-not-exist');
   assert.equal(missing.status, 404);
   assert.match(missing.headers.get('content-type'), /json/);

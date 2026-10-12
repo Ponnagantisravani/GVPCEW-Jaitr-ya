@@ -76,6 +76,12 @@ def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
+    // Keep generated C++ object paths below Windows' 260-character limit.
+    externalNativeBuild {
+        cmake {
+            buildStagingDirectory file(System.getenv("GVPCEW_CXX_DIR") ?: rootProject.file("../../../.tmp/cxx"))
+        }
+    }
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
@@ -85,6 +91,15 @@ android {
     compileOptions { coreLibraryDesugaringEnabled true; sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     androidResources { noCompress += "tflite" }
     defaultConfig {
+        externalNativeBuild {
+            cmake {
+                if (System.getProperty("os.name").startsWith("Windows")) {
+                    // Windows short names turn clang++.exe into CLANG_~1.EXE.
+                    // Preserve C++ driver mode so the standard library is linked.
+                    arguments "-DCMAKE_CXX_FLAGS=--driver-mode=g++"
+                }
+            }
+        }
         applicationId "com.gvpcew.attendance"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion

@@ -1,0 +1,9 @@
+import {pool} from '../src/config/db.js';
+import {writeFile} from 'node:fs/promises';
+const c=await pool.connect();try{await c.query('begin');await c.query("select pg_advisory_xact_lock(hashtext('subject-attendance-batch-configuration'))");
+const sections=(await c.query("select x.id,x.section_name from academic_sections x join departments d on d.id=x.department_id where x.year_number=3 and x.semester_number=5 and d.name in ('CSE','Computer Science Engineering','Computer Science and Engineering') order by x.section_name")).rows;
+const result=[];for(const x of sections){const roster=(await c.query('select s.id,s.roll_number from students s join users u on u.id=s.user_id and u.active where s.academic_section_id=$1 order by s.roll_number,s.id',[x.id])).rows;const batches=[];
+for(const [name,from,to] of [['Batch 1',0,35],['Batch 2',35,Infinity]]){const b=(await c.query('insert into subject_attendance_batches(section_id,name) values($1,$2) on conflict(section_id,name) do update set name=excluded.name returning id',[x.id,name])).rows[0];const members=roster.slice(from,to);for(const s of members)await c.query('insert into subject_attendance_batch_members(batch_id,student_id) values($1,$2) on conflict do nothing',[b.id,s.id]);batches.push({name,count:members.length,first:members[0]?.roll_number,last:members.at(-1)?.roll_number});}
+result.push({section:x.section_name,batches,unassigned:[]});}
+await c.query("insert into audit_logs(action,entity_name,diff) values('configure_first_35_remaining_batches','subject_attendance_batches',$1::jsonb)",[JSON.stringify(result)]);await c.query('commit');console.log(JSON.stringify(result,null,2));await writeFile(new URL('../../.tmp/subject-attendance-batches.json',import.meta.url),JSON.stringify(result,null,2)+'\n');
+}catch(e){await c.query('rollback');throw e;}finally{c.release();await pool.end();}

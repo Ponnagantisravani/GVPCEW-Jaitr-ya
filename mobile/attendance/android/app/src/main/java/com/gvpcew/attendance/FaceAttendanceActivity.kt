@@ -12,7 +12,6 @@ import android.os.SystemClock
 import android.util.Size
 import android.view.Gravity
 import android.view.WindowManager
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -44,6 +43,8 @@ class FaceAttendanceActivity : ComponentActivity() {
     private lateinit var guidance: TextView
     private lateinit var previewView: PreviewView
     private lateinit var policy: FaceLivenessPolicy
+    private var ownTemplate: FloatArray?=null
+    private var minimum=1.0
     private var baseline: FloatArray?=null
     private val samples=mutableListOf<FloatArray>()
     private var lastSample=0L
@@ -52,7 +53,7 @@ class FaceAttendanceActivity : ComponentActivity() {
     @Volatile private var processing=false
     private var closed=false
     private var deadline=0L
-    private val expire=Runnable { cancel("Face challenge expired. Catch a fresh Bluetooth signal and retry.") }
+    private val expire=Runnable { cancel("Face challenge expired. Retry while your attendance window is open.") }
     private val cancelled=Runnable { cancel("Face verification cancelled.") }
     companion object { @Volatile private var current: FaceAttendanceActivity?=null
         fun cancelCurrent() { current?.let { it.handler.post(it.cancelled) } }
@@ -63,7 +64,10 @@ class FaceAttendanceActivity : ComponentActivity() {
         val type=intent.getStringExtra("challenge_type") ?: ""
         deadline=intent.getLongExtra("deadline",0L)
         val left=deadline-SystemClock.elapsedRealtime()
-        if(state!=null || type !in listOf("blink","turn_left","turn_right","smile") || left<=0 || left>6000) { cancel("Face challenge expired. Retry attendance.");return }
+        if(state!=null || type != "blink" || left<=0 || left>6000) { cancel("Face challenge expired. Retry attendance.");return }
+        ownTemplate=intent.getFloatArrayExtra("own_template")
+        minimum=intent.getDoubleExtra("similarity_threshold",1.0)
+        if(ownTemplate?.size!=192 || ownTemplate?.all { it.isFinite() }!=true || ownTemplate?.any { it!=0f }!=true || !minimum.isFinite() || minimum<=0 || minimum>=1) { cancel("Your enrolled face template is unavailable.");return }
         current=this;policy=FaceLivenessPolicy(type,deadline)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val layout=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setBackgroundColor(Color.rgb(13,23,40));setPadding(20,20,20,20) }
@@ -71,8 +75,7 @@ class FaceAttendanceActivity : ComponentActivity() {
         layout.addView(previewView,LinearLayout.LayoutParams(-1,0,1f))
         guidance=TextView(this).apply { text="Starting face verification…";textSize=20f;setTextColor(Color.WHITE);gravity=Gravity.CENTER;setPadding(8,20,8,20) }
         layout.addView(guidance)
-        layout.addView(TextView(this).apply { text="Follow the instruction. Keep only your face in view. No photos are sent.";setTextColor(Color.LTGRAY);gravity=Gravity.CENTER })
-        layout.addView(Button(this).apply { text="Cancel";setOnClickListener { cancel("Face verification cancelled.") } })
+        layout.addView(TextView(this).apply { text="Blink once. Keep only your face in view.";setTextColor(Color.LTGRAY);gravity=Gravity.CENTER })
         setContentView(layout)
         ViewCompat.setOnApplyWindowInsetsListener(layout) { view,insets -> val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars());view.setPadding(20+bars.left,20+bars.top,20+bars.right,20+bars.bottom);insets }
         onBackPressedDispatcher.addCallback(this,object: OnBackPressedCallback(true) { override fun handleOnBackPressed()=cancel("Face verification cancelled.") })
@@ -127,6 +130,7 @@ class FaceAttendanceActivity : ComponentActivity() {
                         val vector=model!!.embed(aligned)
                         if(phase==FaceLivenessPolicy.Phase.ACTION) { baseline?.fill(0f);baseline=vector;captureTrack=face.trackingId }
                         else {
+                            if(FaceTemplateMath.cosine(ownTemplate!!,vector)<=minimum) { vector.fill(0f);runOnUiThread { cancel("Face not recognized, try again","FACE_MISMATCH") };return@addOnCompleteListener }
                             if(baseline==null || captureTrack!=face.trackingId || FaceTemplateMath.cosine(baseline!!,vector)<0.50) { vector.fill(0f);reset();show("Keep the same face in view throughout the challenge");return@addOnCompleteListener }
                             if(SystemClock.elapsedRealtime()-lastSample<100) { vector.fill(0f);return@addOnCompleteListener }
                             samples.add(vector);lastSample=SystemClock.elapsedRealtime()
@@ -141,13 +145,14 @@ class FaceAttendanceActivity : ComponentActivity() {
     private fun complete() {
         if(SystemClock.elapsedRealtime()>=deadline) { handler.post(expire);return }
         val embedding=FaceTemplateMath.average(samples)
+        if(FaceTemplateMath.cosine(ownTemplate!!,embedding)<=minimum) { embedding.fill(0f);runOnUiThread { cancel("Face not recognized, try again","FACE_MISMATCH") };return }
         val data=JSONObject().put("embedding_model",MobileFaceNet.MODEL).put("model_sha256",MobileFaceNet.SHA256)
             .put("embedding",JSONArray(embedding.map { it.toDouble() })).put("sample_count",samples.size).put("liveness_result",true).put("challenge_type",policy.type)
         embedding.fill(0f);active=false
         runOnUiThread { handler.removeCallbacks(expire);setResult(Activity.RESULT_OK,Intent().putExtra("attendance",data.toString()));finish() }
     }
-    private fun cancel(message: String) { if(!active)return;active=false;setResult(Activity.RESULT_CANCELED,Intent().putExtra("error",message));finish() }
+    private fun cancel(message: String,code: String="CAPTURE_CANCELLED") { if(!active)return;active=false;setResult(Activity.RESULT_CANCELED,Intent().putExtra("error",message).putExtra("error_code",code));finish() }
     override fun onStop() { super.onStop();if(active)cancel("Face verification paused. Retry when the app is open.") }
-    private fun closeResources() { if(closed)return;closed=true;model?.close();detector?.close();baseline?.fill(0f);baseline=null;samples.forEach { it.fill(0f) };samples.clear();executor.shutdown() }
+    private fun closeResources() { if(closed)return;closed=true;model?.close();detector?.close();ownTemplate?.fill(0f);ownTemplate=null;intent.removeExtra("own_template");baseline?.fill(0f);baseline=null;samples.forEach { it.fill(0f) };samples.clear();executor.shutdown() }
     override fun onDestroy() { active=false;if(current===this)current=null;handler.removeCallbacksAndMessages(null);provider?.unbindAll();if(!executor.isShutdown)executor.execute { if(!processing)closeResources() };super.onDestroy() }
 }

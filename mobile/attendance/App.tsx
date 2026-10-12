@@ -1,10 +1,10 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, AppState, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View} from 'react-native';
+import {ActivityIndicator, AppState, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View} from 'react-native';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {ApiError, getEnrollmentStatus, login, logout, submitEnrollment, unregisterFcm} from './src/api';
 import AttendanceHome from './src/AttendanceHome';
 import {API_BASE_URL} from './src/config';
-import {enrollmentScreen, validatePassword} from './src/enrollmentPolicy';
+import {enrollmentScreen} from './src/enrollmentPolicy';
 import {captureEnrollment, secureStorage, campusPush} from './src/native';
 import {checkPermissions, requestPermissionsOnce} from './src/permissions';
 import type {EnrollmentCapture, EnrollmentStatus, PermissionState, Session} from './src/types';
@@ -21,11 +21,11 @@ export default function App() {
   const [booting,setBooting]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [session,setSession]=useState<Session|null>(null),[status,setStatus]=useState<EnrollmentStatus|null>(null),[deviceId,setDeviceId]=useState('');
   const [apiBase,setApiBase]=useState(API_BASE_URL),[email,setEmail]=useState(''),[password,setPassword]=useState('');
-  const [currentPassword,setCurrentPassword]=useState(''),[newPassword,setNewPassword]=useState(''),[confirmation,setConfirmation]=useState(''),[consent,setConsent]=useState(false);
-  const [capture,setCapture]=useState<EnrollmentCapture|null>(null),[permissions,setPermissions]=useState<PermissionState|null>(null);
+  const [consent,setConsent]=useState(false);
+  const [permissions,setPermissions]=useState<PermissionState|null>(null);
   const sessionRef=useRef<Session|null>(null),captureRef=useRef<EnrollmentCapture|null>(null),version=useRef(0);
-  const releaseCapture=useCallback(()=>{captureRef.current?.embedding.fill(0);captureRef.current=null;setCapture(null);},[]);
-  const clearIdentity=useCallback(async()=>{version.current++;sessionRef.current=null;setSession(null);setStatus(null);releaseCapture();setCurrentPassword('');setNewPassword('');setConfirmation('');setConsent(false);await secureStorage.clear();await campusPush.clear();},[releaseCapture]);
+  const releaseCapture=useCallback(()=>{captureRef.current?.embedding.fill(0);captureRef.current=null;},[]);
+  const clearIdentity=useCallback(async()=>{version.current++;sessionRef.current=null;setSession(null);setStatus(null);releaseCapture();setConsent(false);await secureStorage.clear();await campusPush.clear();},[releaseCapture]);
   const refresh=useCallback(async(s: Session, lock=false)=>{
     const requestVersion=version.current;
     if(lock)setStatus(null);
@@ -56,14 +56,14 @@ export default function App() {
     return ()=>{active=false;subscription.remove();captureRef.current?.embedding.fill(0);};
   },[refresh,releaseCapture]);
   useEffect(()=>{
-    if(!session || status?.enrollment_status!=='pending')return;
+    if(!session)return;
     const timer=setInterval(()=>{if(AppState.currentState==='active')void refresh(session);},15000);
     return ()=>clearInterval(timer);
-  },[session,status?.enrollment_status,refresh]);
+  },[session,refresh]);
 
   useEffect(()=>{
-    if(status && status.enrollment_status !== 'required') {
-      setCurrentPassword('');setNewPassword('');setConfirmation('');setConsent(false);releaseCapture();
+    if(status && status.face_enrolled) {
+      setConsent(false);releaseCapture();
     }
   },[status,releaseCapture]);
   async function signIn() {
@@ -81,29 +81,16 @@ export default function App() {
     try {await clearIdentity();}catch(e){setError(message(e));}finally{setBusy(false);}
   }
   async function captureFace() {
-    const invalid=validatePassword(currentPassword,newPassword,confirmation);
-    if(invalid) {setError(invalid);return;}
     if(!consent) {setError('Read and accept the face attendance consent before registration.');return;}
     setBusy(true);setError('');releaseCapture();
     try {
       const access=await requestPermissionsOnce();setPermissions(access);
       if(access.missing.length)throw new Error('Enable '+access.missing.join(', ')+' in app settings, then return.');
-      const captured=await captureEnrollment();captureRef.current=captured;setCapture(captured);
-    } catch(e) {setError(message(e));}finally{setBusy(false);}
-  }
-  async function finishSetup() {
-    if(!session||!capture||!consent)return;
-    const invalid=validatePassword(currentPassword,newPassword,confirmation);if(invalid) {setError(invalid);return;}
-    setBusy(true);setError('');
-    try {
-      await submitEnrollment(session,capture,deviceId,currentPassword,newPassword);
-      setCurrentPassword('');setNewPassword('');setConfirmation('');setConsent(false);
-      await refresh(session,true);
-    } catch(e) {
-      setError(message(e));
-      // A timeout can happen after commit. Refresh before permitting a repeated setup request.
-      try {const latest=await getEnrollmentStatus(session);setStatus(latest);}catch { /* The error and retry remain visible. */ }
-    } finally {releaseCapture();setBusy(false);}
+      const captured=await captureEnrollment();captureRef.current=captured;
+      if(!sessionRef.current)throw new Error('Sign in again before saving enrollment.');
+      await submitEnrollment(sessionRef.current,captured,deviceId);
+      await refresh(sessionRef.current,true);
+    } catch(e) {if(sessionRef.current)await refresh(sessionRef.current,true);setError(message(e));}finally{releaseCapture();setBusy(false);}
   }
   const expireAttendance=useCallback(()=>{void clearIdentity().then(()=>setError('Your session expired. Sign in again.')).catch(e=>setError(message(e)));},[clearIdentity]);
   const screen=status ? enrollmentScreen(status,deviceId) : null;
@@ -118,20 +105,17 @@ export default function App() {
     </View> : <>
       <View style={styles.account}><Text style={styles.accountName}>{session.user.fullName}</Text><Text style={styles.subtitle}>{session.user.email}</Text></View>
       {!status ? <View style={styles.card}><Text style={styles.title}>Checking enrollment</Text><Text style={styles.body}>Connect to the campus server to continue.</Text><Action title="Retry" disabled={busy} onPress={()=>void refresh(session,true)} /></View> : screen==='setup' ? <View style={styles.card}>
-        <Text style={styles.eyebrow}>ONE-TIME SETUP</Text><Text style={styles.title}>Secure your account</Text><Text style={styles.body}>Change your password and register your face on this phone. Your administrator will review the registration.</Text>
-        <Field label="Current password" value={currentPassword} onChange={setCurrentPassword} password /><Field label="New password (12–128 characters)" value={newPassword} onChange={setNewPassword} password /><Field label="Confirm new password" value={confirmation} onChange={setConfirmation} password />
-        <View style={styles.consent}><Text style={styles.heading}>Your face data and privacy</Text><Text style={styles.body}>Your numeric face template is used to verify your own attendance. Camera frames are processed on this phone. Only the averaged template and one small preview are sent to the campus server.</Text><Text style={styles.body}>The preview is deleted after administrator review, or expires after seven days. Your template stays until an administrator resets enrollment or removes your account. This account is bound to this phone; only an administrator can reset it.</Text><Text style={styles.body}>Camera, Bluetooth, location permission for Bluetooth proximity, and notification access support attendance. The app does not collect GPS coordinates. Contact your administrator if you do not consent.</Text>
+        <Text style={styles.eyebrow}>ONE-TIME SETUP</Text><Text style={styles.title}>Register your face</Text><Text style={styles.body}>Register your face once on this phone. Look forward, slightly left, then slightly right. Your registration saves automatically.</Text>
+        <View style={styles.consent}><Text style={styles.heading}>Your face data and privacy</Text><Text style={styles.body}>Your numeric face template is used to verify your own attendance. Camera frames are processed on this phone. Only the averaged numeric template is sent to the campus server.</Text><Text style={styles.body}>Your template stays until an administrator resets enrollment or removes your account. This account is bound to this phone; only an administrator can reset it.</Text><Text style={styles.body}>Camera, Bluetooth, location permission for Bluetooth proximity, and notification access support attendance. The app does not collect GPS coordinates. Contact your administrator if you do not consent.</Text>
           <Pressable accessibilityRole="checkbox" accessibilityState={{checked:consent}} onPress={()=>{setConsent(!consent);if(consent)releaseCapture();}} style={styles.checkboxRow}><Text style={[styles.checkbox,consent&&styles.checked]}>{consent?'✓':''}</Text><Text style={styles.checkboxLabel}>I consent to face enrollment and attendance verification.</Text></Pressable>
         </View>
         {permissions && permissions.missing.length>0 && <Text style={styles.notice}>Required access: {permissions.missing.join(', ')}.</Text>}{permissionNotice}
-        {capture && <View style={styles.captureSummary}><Image accessibilityLabel="Face preview for administrator review" source={{uri:capture.preview}} style={styles.facePreview} /><Text style={styles.body}>Five face samples captured. Ready for administrator review.</Text></View>}
-        <Action title={busy?'Please wait…':capture?'Capture again':'Capture face'} disabled={busy||!consent} onPress={()=>void captureFace()} />
-        {capture && <Action title="Save setup and request approval" disabled={busy||!consent} onPress={()=>void finishSetup()} />}
+        <Action title={busy?'Capturing and saving…':'Register face'} disabled={busy||!consent} onPress={()=>void captureFace()} />
         <Action title="Open permission settings" secondary disabled={busy} onPress={()=>void Linking.openSettings()} />
       </View> : <View style={styles.card}>
-        <Text style={styles.eyebrow}>{screen==='ready'?'ENROLLMENT APPROVED':'ENROLLMENT STATUS'}</Text>
+        <Text style={styles.eyebrow}>{screen==='ready'?'FACE REGISTERED':'ENROLLMENT STATUS'}</Text>
         <Text style={styles.title}>{screen==='ready'?'You’re ready':screen==='pending'?'Awaiting approval':screen==='wrong-device'?'Use your enrolled phone':'Registration needs review'}</Text>
-        <Text style={styles.body}>{screen==='ready'?'Your face registration is approved on this phone. You’ll receive an alert when attendance opens.':screen==='pending'?'Your setup is saved. Your administrator needs to review and approve it. You cannot repeat enrollment while it is awaiting review.':screen==='wrong-device'?'This account is bound to another phone. Contact your administrator for a device reset.':'Your registration was rejected. Contact your administrator to reset enrollment before capturing again.'}</Text>
+        <Text style={styles.body}>{screen==='ready'?'Your face is registered. You’ll receive an alert when attendance opens.':screen==='pending'?'Your setup is saved. Your administrator needs to review and approve it. You cannot repeat enrollment while it is awaiting review.':screen==='wrong-device'?'This account is bound to another phone. Contact your administrator for a device reset.':'Your registration was rejected. Contact your administrator to reset enrollment before capturing again.'}</Text>
         {permissionNotice}<Action title="Refresh status" secondary disabled={busy} onPress={()=>void refresh(session,true)} />
         {permissions && (permissions.missing.length>0||!permissions.notificationsAllowed) && <Action title="Open permission settings" secondary onPress={()=>void Linking.openSettings()} />}
       </View>}
