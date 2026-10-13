@@ -1157,11 +1157,6 @@ export function TimetableManagement({ role = 'academic_coordinator', rows = [], 
         updatedAt: new Date().toISOString().split('T')[0]
       }
     };
-    setTimetables(updated);
-    try {
-      localStorage.setItem(TIMETABLE_STORAGE_KEY, JSON.stringify(updated));
-    } catch {}
-
     showNotice('Publishing timetable live to Student & Faculty dashboards...');
     try {
       await api.post('/timetables/publish-grid', {
@@ -1170,13 +1165,15 @@ export function TimetableManagement({ role = 'academic_coordinator', rows = [], 
         image: timetableImages[selectedBranch] || null,
         publish: true
       });
+      setTimetables(updated);
+      saveTimetableCache(TIMETABLE_STORAGE_KEY, updated);
       showNotice('Timetable published live across Student & Faculty portals!');
       if (reload) reload();
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new Event('timetable-published'));
     } catch (err) {
       console.error('Server sync error on publish:', err);
-      showNotice(`Saved locally. Server notice: ${err.response?.data?.message || err.message}`);
+      showNotice(`Timetable was not published. ${err.response?.data?.message || err.message}. Correct the issue and publish again.`);
     }
   };
 

@@ -1,4 +1,5 @@
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const {realpathSync} = require('node:fs');
 
 /**
  * Metro configuration
@@ -6,6 +7,8 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
  *
  * @type {import('@react-native/metro-config').MetroConfig}
  */
-const config = {};
+// Gradle can run through a Windows drive alias while Node resolves real paths.
+const projectRoot = realpathSync(process.env.GVPCEW_METRO_ROOT || __dirname);
+const config = {projectRoot, watchFolders: [projectRoot]};
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+module.exports = mergeConfig(getDefaultConfig(projectRoot), config);

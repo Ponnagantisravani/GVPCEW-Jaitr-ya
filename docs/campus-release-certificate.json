@@ -1,0 +1,6 @@
+{
+    "local_key":  ".release/campus-release.p12",
+    "sha256":  "18dff721a92dce9c62eef14a03c90df8985c713f6d387196d521f4c408a23bac",
+    "alias":  "campus-release",
+    "play_app_signing_certificate_must_be_checked":  true
+}

@@ -18,7 +18,8 @@
     "react-native": "0.85.3",
     "react-native-ble-advertiser": "0.0.17",
     "react-native-ble-plx": "3.5.1",
-    "react-native-safe-area-context": "^5.5.2"
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-webview": "^14.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

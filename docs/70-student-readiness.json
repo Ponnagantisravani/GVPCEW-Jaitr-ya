@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-11T18:08:13.842Z",
+  "generated_at": "2026-10-12T01:05:34.794Z",
   "portal_load_test": {
     "generated_at": "2026-10-11T17:41:48.908Z",
     "students": 70,
@@ -66,22 +66,22 @@
     ]
   },
   "attendance_load_test": {
-    "generated_at": "2026-10-11T17:37:52.270Z",
+    "generated_at": "2026-10-12T01:04:05.828Z",
     "mode": "local-postgresql-real-routes",
     "google_integrity": "synthetic verdicts in test process only",
     "google_decode_delay_ms": 120,
     "face": "unique synthetic normalized 192-value templates; no camera",
-    "main_closure": "real 60-second deadline and lifecycle worker",
+    "main_closure": "accelerated fixture deadline",
     "late_expiry": "accelerated fixture deadline",
     "scenarios": [
       {
         "name": "70 simultaneous students",
         "passed": true,
         "students": 70,
-        "elapsed_ms": 3617,
-        "p50_ms": 2681.5,
-        "p95_ms": 2875.8,
-        "max_ms": 2878.5
+        "elapsed_ms": 3444.7,
+        "p50_ms": 2654.1,
+        "p95_ms": 2902.4,
+        "max_ms": 2905.8
       },
       {
         "name": "four independent sections and racing starts",
@@ -89,10 +89,10 @@
         "sections": 4,
         "students": 280,
         "automatic_starts": 1,
-        "elapsed_ms": 8421.2,
-        "p50_ms": 7010.4,
-        "p95_ms": 7697.6,
-        "max_ms": 7796.1
+        "elapsed_ms": 10700.8,
+        "p50_ms": 9047.7,
+        "p95_ms": 10308.6,
+        "max_ms": 10340.5
       },
       {
         "name": "duplicate races",
@@ -103,7 +103,7 @@
         "rejected": 70,
         "shared_challenge_students": 35,
         "different_challenge_students": 35,
-        "elapsed_ms": 3685.9
+        "elapsed_ms": 2835.3
       },
       {
         "name": "rejection, locked rechecks, separate challenge budgets and racing closure",
@@ -118,10 +118,10 @@
         "passed": true,
         "students": 70,
         "automatic_starts": 1,
-        "elapsed_ms": 1435,
-        "p50_ms": 1329,
-        "p95_ms": 1400.3,
-        "max_ms": 1401.2
+        "elapsed_ms": 2112.5,
+        "p50_ms": 1909.2,
+        "p95_ms": 2024.7,
+        "max_ms": 2025.7
       },
       {
         "name": "main closure, late recovery and read-only reports",
@@ -130,12 +130,20 @@
         "present": 56,
         "late": 7,
         "absent": 7,
-        "closure_materialized_lag_ms": 619,
+        "closure_materialized_lag_ms": 1019.1,
         "late_timings": {
-          "p50_ms": 1770.4,
-          "p95_ms": 1911.9,
-          "max_ms": 1959.4
+          "p50_ms": 264.6,
+          "p95_ms": 269,
+          "max_ms": 270.4
         }
+      },
+      {
+        "name": "native Bluetooth attendance reflects in student, coordinator and faculty dashboards",
+        "passed": true,
+        "students": 70,
+        "faculty_present": 70,
+        "faculty_pending": 0,
+        "percentage": 100
       }
     ],
     "passed": true,
@@ -146,14 +154,15 @@
     "postgresql_version": "18.6",
     "pool_max": 10,
     "fixture_pool_max": 4,
-    "simulator_sha256": "13dee06e4023cb266eecef9d68787a64b178d823d9a19919f7cc1f4eefa0c790",
+    "simulator_sha256": "f9261864e54963fa2596d5cc9db09173c7b20586662d308860cfe97cc2615bcf",
     "actual_migrations_applied_to_empty_test_database": true
   },
   "native_firebase_config_present": false,
   "native_release_apk_present": true,
-  "native_tests_passed": 47,
+  "native_tests_passed": 49,
   "native_typecheck_passed": true,
   "native_face_model_verification_passed": true,
+  "full_campus_apk_present": true,
   "public_backend_deployed": false,
   "ready_for_70_phone_distribution": false,
   "remaining": [

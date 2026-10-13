@@ -3,6 +3,8 @@ import {ActivityIndicator, AppState, KeyboardAvoidingView, Linking, Platform, Pr
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {ApiError, getEnrollmentStatus, login, logout, submitEnrollment, unregisterFcm} from './src/api';
 import AttendanceHome from './src/AttendanceHome';
+import NativePortal from './src/NativePortal';
+import {portalRoles, studentRole} from './src/portal';
 import {API_BASE_URL} from './src/config';
 import {enrollmentScreen} from './src/enrollmentPolicy';
 import {captureEnrollment, secureStorage, campusPush} from './src/native';
@@ -22,11 +24,14 @@ export default function App() {
   const [session,setSession]=useState<Session|null>(null),[status,setStatus]=useState<EnrollmentStatus|null>(null),[deviceId,setDeviceId]=useState('');
   const [apiBase,setApiBase]=useState(API_BASE_URL),[email,setEmail]=useState(''),[password,setPassword]=useState('');
   const [consent,setConsent]=useState(false);
+  const [portalRole,setPortalRole]=useState<string|null>(null);
+  const [attendanceOpenRequest,setAttendanceOpenRequest]=useState(0);
   const [permissions,setPermissions]=useState<PermissionState|null>(null);
   const sessionRef=useRef<Session|null>(null),captureRef=useRef<EnrollmentCapture|null>(null),version=useRef(0);
   const releaseCapture=useCallback(()=>{captureRef.current?.embedding.fill(0);captureRef.current=null;},[]);
   const clearIdentity=useCallback(async()=>{version.current++;sessionRef.current=null;setSession(null);setStatus(null);releaseCapture();setConsent(false);await secureStorage.clear();await campusPush.clear();},[releaseCapture]);
   const refresh=useCallback(async(s: Session, lock=false)=>{
+    if(!s.user.roles.some(studentRole))return;
     const requestVersion=version.current;
     if(lock)setStatus(null);
     try {
@@ -60,6 +65,7 @@ export default function App() {
     const timer=setInterval(()=>{if(AppState.currentState==='active')void refresh(session);},15000);
     return ()=>clearInterval(timer);
   },[session,refresh]);
+  useEffect(()=>{setPortalRole(null);},[session?.user.id]);
 
   useEffect(()=>{
     if(status && status.face_enrolled) {
@@ -104,7 +110,7 @@ export default function App() {
       <Action title={busy?'Signing in…':'Sign in'} onPress={()=>void signIn()} disabled={busy||!deviceId} />
     </View> : <>
       <View style={styles.account}><Text style={styles.accountName}>{session.user.fullName}</Text><Text style={styles.subtitle}>{session.user.email}</Text></View>
-      {!status ? <View style={styles.card}><Text style={styles.title}>Checking enrollment</Text><Text style={styles.body}>Connect to the campus server to continue.</Text><Action title="Retry" disabled={busy} onPress={()=>void refresh(session,true)} /></View> : screen==='setup' ? <View style={styles.card}>
+      {!session.user.roles.some(studentRole) ? <View style={styles.card}><Text style={styles.title}>Campus portal</Text><Text style={styles.body}>Open your assigned dashboard below to manage your campus work and review attendance.</Text></View> : !status ? <View style={styles.card}><Text style={styles.title}>Checking enrollment</Text><Text style={styles.body}>Connect to the campus server to continue.</Text><Action title="Retry" disabled={busy} onPress={()=>void refresh(session,true)} /></View> : screen==='setup' ? <View style={styles.card}>
         <Text style={styles.eyebrow}>ONE-TIME SETUP</Text><Text style={styles.title}>Register your face</Text><Text style={styles.body}>Register your face once on this phone. Look forward, slightly left, then slightly right. Your registration saves automatically.</Text>
         <View style={styles.consent}><Text style={styles.heading}>Your face data and privacy</Text><Text style={styles.body}>Your numeric face template is used to verify your own attendance. Camera frames are processed on this phone. Only the averaged numeric template is sent to the campus server.</Text><Text style={styles.body}>Your template stays until an administrator resets enrollment or removes your account. This account is bound to this phone; only an administrator can reset it.</Text><Text style={styles.body}>Camera, Bluetooth, location permission for Bluetooth proximity, and notification access support attendance. The app does not collect GPS coordinates. Contact your administrator if you do not consent.</Text>
           <Pressable accessibilityRole="checkbox" accessibilityState={{checked:consent}} onPress={()=>{setConsent(!consent);if(consent)releaseCapture();}} style={styles.checkboxRow}><Text style={[styles.checkbox,consent&&styles.checked]}>{consent?'✓':''}</Text><Text style={styles.checkboxLabel}>I consent to face enrollment and attendance verification.</Text></Pressable>
@@ -119,12 +125,13 @@ export default function App() {
         {permissionNotice}<Action title="Refresh status" secondary disabled={busy} onPress={()=>void refresh(session,true)} />
         {permissions && (permissions.missing.length>0||!permissions.notificationsAllowed) && <Action title="Open permission settings" secondary onPress={()=>void Linking.openSettings()} />}
       </View>}
-      {screen==='ready' && <AttendanceHome session={session} deviceId={deviceId} notificationsAllowed={permissions?.notificationsAllowed ?? false} onExpired={expireAttendance} />}
+      <View style={styles.card}><Text style={styles.heading}>Campus dashboards</Text>{Object.entries(portalRoles).filter(([role])=>session.user.roles.includes(role)).map(([role,portal])=><Action key={role} title={portal.label} onPress={()=>setPortalRole(role)} />)}</View>
+      {screen==='ready' && <AttendanceHome session={session} deviceId={deviceId} notificationsAllowed={permissions?.notificationsAllowed ?? false} onExpired={expireAttendance} openRequest={attendanceOpenRequest} />}
       <Action title="Sign out" secondary disabled={busy} onPress={()=>void signOut()} />
     </>}
     {!!error && <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorText}>{error}</Text></View>}
     <Text style={styles.footer}>One account. One phone. Your attendance.</Text>
-  </View></ScrollView></KeyboardAvoidingView></SafeAreaView></SafeAreaProvider>;
+  </View></ScrollView></KeyboardAvoidingView></SafeAreaView>{session && portalRole && <NativePortal session={session} role={portalRole} onClose={()=>setPortalRole(null)} onAttendance={()=>{setPortalRole(null);setAttendanceOpenRequest(n=>n+1);}} onExpired={()=>{setPortalRole(null);expireAttendance();}} />}</SafeAreaProvider>;
 }
 const styles=StyleSheet.create({
   flex:{flex:1},safe:{flex:1,backgroundColor:'#f3f6fc'},scroll:{padding:22,flexGrow:1},content:{width:'100%',maxWidth:520,alignSelf:'center',gap:18},brand:{flexDirection:'row',alignItems:'center',gap:12,marginVertical:16},brandMark:{fontSize:28,fontWeight:'800',color:'#fff',backgroundColor:'#185adb',width:56,height:56,textAlign:'center',textAlignVertical:'center',borderRadius:16},brandTitle:{fontSize:23,fontWeight:'800',color:'#15233c'},subtitle:{fontSize:13,color:'#69758a',marginTop:3},card:{backgroundColor:'#fff',borderRadius:22,padding:24,gap:16,borderWidth:1,borderColor:'#e2e8f3'},eyebrow:{fontSize:11,fontWeight:'800',letterSpacing:1.4,color:'#185adb'},title:{fontSize:27,fontWeight:'800',color:'#15233c'},heading:{fontSize:17,fontWeight:'700',color:'#15233c'},body:{fontSize:14,lineHeight:22,color:'#57657a'},field:{gap:7},label:{fontSize:13,fontWeight:'600',color:'#34425c'},input:{backgroundColor:'#f8faff',borderWidth:1,borderColor:'#d5dfed',borderRadius:12,paddingHorizontal:14,paddingVertical:12,fontSize:16,color:'#15233c'},button:{paddingVertical:15,paddingHorizontal:16,borderRadius:12,backgroundColor:'#185adb',alignItems:'center'},buttonText:{color:'#fff',fontSize:15,fontWeight:'700'},secondary:{backgroundColor:'#eaf0fb'},secondaryText:{color:'#24549b'},disabled:{opacity:0.45},account:{paddingHorizontal:4},accountName:{fontSize:18,fontWeight:'700',color:'#15233c'},consent:{backgroundColor:'#f4f7fc',padding:16,borderRadius:14,gap:10},checkboxRow:{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:10},checkbox:{width:24,height:24,borderRadius:6,borderWidth:1,borderColor:'#a5b4cc',textAlign:'center',textAlignVertical:'center',fontWeight:'700',color:'#fff'},checked:{backgroundColor:'#185adb',borderColor:'#185adb'},checkboxLabel:{flex:1,fontSize:13,lineHeight:20,color:'#34425c'},notice:{backgroundColor:'#fff4d7',padding:12,borderRadius:10,color:'#78510d',fontSize:13,lineHeight:20},captureSummary:{alignItems:'center',gap:10},facePreview:{width:136,height:136,borderRadius:18},error:{padding:14,backgroundColor:'#fce9e9',borderRadius:12},errorText:{color:'#9b2828',fontSize:14,lineHeight:21},footer:{color:'#8a95a7',fontSize:12,textAlign:'center',paddingVertical:12},

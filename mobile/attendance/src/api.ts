@@ -12,7 +12,7 @@ async function call<T>(apiBase: string, route: string, token?: string, body?: un
 export async function login(apiBase: string, email: string, password: string): Promise<Session> {
   const base = validateApiBase(apiBase);
   const result = await call<{token: string; user: CampusUser}>(base, '/auth/login', undefined, {email: email.trim().toLowerCase(), password, client: 'mobile', rememberDevice: true});
-  if (!result.token || !result.user?.roles?.some(role => role === 'student' || role === 'student_coordinator')) throw new Error('This app is for students and student coordinators. Use the web dashboard for other roles.');
+  if (!result.token || !result.user?.roles?.some(role => ['student','student_coordinator','faculty','academic_coordinator','admin'].includes(role))) throw new Error('No campus dashboard has been assigned to this account.');
   return {...result, apiBase: base};
 }
 export const getEnrollmentStatus = (session: Session) => call<EnrollmentStatus>(session.apiBase, '/mobile/enrollment/status', session.token);

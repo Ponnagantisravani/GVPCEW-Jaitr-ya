@@ -11,6 +11,13 @@ test('only known portal roles are used for navigation',()=>{
  assert.deepEqual(readSession().user.roles,['student']);
 });
 
+test('native campus session replaces another account cached in the web dashboard',()=>{
+ localStorage.setItem('gvpcew_session',JSON.stringify({token:'old',user:{id:'old',roles:['admin']}}));
+ window.ReactNativeWebView={injectedObjectJson:()=>JSON.stringify({campusSession:{token:'native',user:{id:'new',roles:['student','faculty']},activeRole:'faculty'}})};
+ assert.equal(readSession().user.id,'new');assert.equal(readSession().activeRole,'faculty');
+ assert.equal(JSON.parse(localStorage.getItem('gvpcew_session')).token,'native');
+});
+
 test('legacy single-role login responses can open a dashboard without bypassing explicit access lists',()=>{
  assert.equal(preferredRole({role:'student'}),'student');
  localStorage.setItem('gvpcew_session',JSON.stringify({token:'abc',user:{role:'student'}}));

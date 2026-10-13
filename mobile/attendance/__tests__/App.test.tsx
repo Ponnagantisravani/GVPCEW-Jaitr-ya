@@ -1,6 +1,7 @@
 import React from 'react';
 import {act,create} from 'react-test-renderer';
 import App from '../App';
+jest.mock('../src/NativePortal',()=>()=>null);
 jest.mock('react-native-safe-area-context',()=>{const {View}=require('react-native');return {SafeAreaProvider:View,SafeAreaView:View};});
 beforeAll(()=>jest.useRealTimers());
 jest.mock('../src/AttendanceHome',()=>()=>{const {Text}=require('react-native');return <Text>Attendance dashboard</Text>;});

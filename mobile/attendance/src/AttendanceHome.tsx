@@ -8,13 +8,14 @@ import {acceptsPush,attendanceMilliseconds,anchorAttendance} from './attendanceP
 import {monotonicNow} from './bleProtocol';
 import type {AttendanceSession,AttendanceStatus,Session,StartPeriod,BroadcastStatus,AttendanceRecord,AttendanceCurrent} from './types';
 const explain=(e: unknown)=>e instanceof Error?e.message:'Unable to reach campus attendance.';
-export default function AttendanceHome({session,deviceId,notificationsAllowed,onExpired}: {session: Session; deviceId: string; notificationsAllowed: boolean; onExpired: ()=>void}) {
+export default function AttendanceHome({session,deviceId,notificationsAllowed,onExpired,openRequest=0}: {session: Session; deviceId: string; notificationsAllowed: boolean; onExpired: ()=>void; openRequest?:number}) {
   const coordinator=session.user.roles.includes('student_coordinator');
   const [active,setActive]=useState<AttendanceSession|null>(null),[counts,setCounts]=useState<AttendanceStatus|null>(null),[periods,setPeriods]=useState<StartPeriod[]>([]);
   const [error,setError]=useState(''),[pushError,setPushError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[now,setNow]=useState(Date.now());
   const [duration,setDuration]=useState('60');
   const durationValid=Number.isInteger(Number(duration))&&Number(duration)>=30&&Number(duration)<=1800;
   const [openedSession,setOpenedSession]=useState<string|null>(null);
+  useEffect(()=>{if(openRequest>0&&active?.id)setOpenedSession(active.id);},[openRequest,active?.id]);
   const [windowPhase,setWindowPhase]=useState<AttendanceCurrent['phase']>(null),[ownRecord,setOwnRecord]=useState<AttendanceRecord|null>(null);
   const proximity=useBleProximity(session,windowPhase==='ble'?active:null,deviceId,onExpired);
   const verification=useFaceAttendance(session,active,deviceId,proximity.receipt,onExpired,windowPhase==='ble'?'ble':windowPhase==='fallback'?'fallback':'closed',openedSession===active?.id);

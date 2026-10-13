@@ -18,3 +18,10 @@ venv/
 .codex/
 .agents/
 .aws/
+!frontend/assets/*.png
+.release/
+**/*.p12
+**/*.jks
+**/*.keystore
+**/google-services.json
+**/service-account*.json

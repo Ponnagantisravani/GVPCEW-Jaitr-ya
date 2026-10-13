@@ -1,0 +1,17 @@
+{
+  "file": "C:\\Users\\SRAVANI\\Documents\\GVPCEW APP\\GVPCEW APP (5)\\GVPCEW APP\\build\\GVPCEW-full-campus-test.apk",
+  "bytes": 118753412,
+  "sha256": "9b11fe568e6eede62fbf69d88f9cb6fdf18bcc342d0d2c63960db506b4a2631c",
+  "dashboards": [
+    "student",
+    "student_coordinator",
+    "faculty",
+    "academic_coordinator",
+    "admin"
+  ],
+  "native_bluetooth_and_face": true,
+  "development_signing": true,
+  "requires_public_https_backend": true,
+  "public_backend_deployed": false,
+  "ready_for_class_distribution": false
+}

@@ -15,3 +15,9 @@ tools/__pycache__/
 
 .tmp/
 *.log
+.release/
+*.jks
+*.p12
+*.keystore
+mobile/attendance/android/app/google-services.json
+**/service-account*.json

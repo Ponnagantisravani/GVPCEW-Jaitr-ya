@@ -61,6 +61,9 @@ react {
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
 def enableProguardInReleaseBuilds = false
+def campusSigningFile = rootProject.file('../../../.release/release-signing.properties')
+def campusSigning = new Properties()
+if (campusSigningFile.exists()) campusSigningFile.withInputStream { campusSigning.load(it) }
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -96,7 +99,7 @@ android {
                 if (System.getProperty("os.name").startsWith("Windows")) {
                     // Windows short names turn clang++.exe into CLANG_~1.EXE.
                     // Preserve C++ driver mode so the standard library is linked.
-                    arguments "-DCMAKE_CXX_FLAGS=--driver-mode=g++"
+                    arguments "-DCMAKE_CXX_FLAGS=--driver-mode=g++", "-DCMAKE_OBJECT_PATH_MAX=200"
                 }
             }
         }
@@ -107,6 +110,14 @@ android {
         versionName "1.0"
     }
     signingConfigs {
+        campusRelease {
+            if (campusSigningFile.exists()) {
+                storeFile rootProject.file('../../../.release/campus-release.p12')
+                storePassword campusSigning.getProperty('storePassword')
+                keyAlias campusSigning.getProperty('keyAlias')
+                keyPassword campusSigning.getProperty('keyPassword')
+            }
+        }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -119,13 +130,22 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.campusRelease
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+}
+
+tasks.register('verifyCampusReleaseSigning') {
+    doLast {
+        if (!campusSigningFile.exists() || !rootProject.file('../../../.release/campus-release.p12').exists()) {
+            throw new GradleException('Run tools/Initialize-Campus-Release.ps1 before building a release. Debug signing is not used for releases.')
+        }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name == 'preReleaseBuild') task.dependsOn('verifyCampusReleaseSigning')
 }
 
 dependencies {

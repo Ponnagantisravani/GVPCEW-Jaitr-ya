@@ -12,11 +12,15 @@ export function assignedRoles(user) {
 
 export function readSession() {
   try {
-    const session = JSON.parse(localStorage.getItem('gvpcew_session') || 'null');
+    const injected = globalThis.window?.ReactNativeWebView?.injectedObjectJson?.();
+    const session = injected ? JSON.parse(injected).campusSession : JSON.parse(localStorage.getItem('gvpcew_session') || 'null');
     if (!session || typeof session.token !== 'string' || !session.token || !session.user ||
         (session.user.roles !== undefined && !Array.isArray(session.user.roles))) return null;
     const roles = assignedRoles(session.user);
-    return roles.length ? {...session, user: {...session.user, roles}} : null;
+    if (!roles.length) return null;
+    const normalized = {...session, user: {...session.user, roles}};
+    if (injected) localStorage.setItem('gvpcew_session',JSON.stringify(normalized));
+    return normalized;
   } catch { return null; }
 }
 
