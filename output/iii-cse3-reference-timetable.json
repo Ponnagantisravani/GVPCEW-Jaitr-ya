@@ -1,0 +1,109 @@
+{
+  "class": "III CSE",
+  "section": "3",
+  "classTeacher": "Mrs. Y. Sowmya",
+  "classroom": "104",
+  "academicYear": "2026-2027",
+  "periods": [
+    [
+      "08:40",
+      "09:30"
+    ],
+    [
+      "09:30",
+      "10:20"
+    ],
+    [
+      "10:20",
+      "11:10"
+    ],
+    [
+      "11:10",
+      "12:00"
+    ],
+    [
+      "12:00",
+      "12:50"
+    ],
+    [
+      "12:50",
+      "13:40"
+    ],
+    [
+      "13:40",
+      "14:30"
+    ],
+    [
+      "14:30",
+      "15:20"
+    ]
+  ],
+  "days": {
+    "Monday": [
+      "AI (MA)",
+      "CD (GSR)",
+      "IRS/MPMC (KSR/MHL)",
+      "Lunch",
+      "DM Lab (YS, Bhavana)",
+      "DM Lab (YS, Bhavana)",
+      "DM Lab (YS, Bhavana)",
+      "HPC Honors (SSH)"
+    ],
+    "Tuesday": [
+      "AI (MA)",
+      "DT&E (KR)",
+      "CN (DI)",
+      "Lunch",
+      "IRS/MPMC (KSR/MHL)",
+      "Library",
+      "DWDM (YS)",
+      "SM Honors (MBS)"
+    ],
+    "Wednesday": [
+      "DWDM (YS)",
+      "CD (GSR)",
+      "AI (MA)",
+      "Lunch",
+      "CD Tutorial (GSR)",
+      "Counselling",
+      "DWDM (YS)",
+      "HPC Honors (SSH)"
+    ],
+    "Thursday": [
+      "IRS/MPMC (KSR/MHL)",
+      "DevOps (YAVLP)",
+      "DevOps (YAVLP)",
+      "DevOps (YAVLP)",
+      "Lunch",
+      "DT&E (KR)",
+      "CN (DI)",
+      "SM Honors (MBS)"
+    ],
+    "Friday": [
+      "CN (DI)",
+      "AI (MA)",
+      "CD (GSR)",
+      "Lunch",
+      "CN Lab (DI, Bhoomika)",
+      "CN Lab (DI, Bhoomika)",
+      "CN Lab (DI, Bhoomika)",
+      "SM Honors (MBS)"
+    ],
+    "Saturday": [
+      "CD (GSR)",
+      "DT&E (KR)",
+      "CN (DI)",
+      "Lunch",
+      "DWDM (YS)",
+      "IRS/MPMC (KSR/MHL)",
+      "DWDM Tutorial (YS)",
+      "HPC Honors (SSH)"
+    ]
+  },
+  "notes": [
+    "10:20 header reads 11:10PM; interpreted as 11:10AM from adjacent periods.",
+    "Regular classroom 104 was assigned by the user.",
+    "Faculty emails for abbreviations and lab assistants must be verified before publication.",
+    "Thursday lunch differs from other days; DevOps spans 09:30–12:00."
+  ]
+}
