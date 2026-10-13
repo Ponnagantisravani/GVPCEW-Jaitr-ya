@@ -40,3 +40,5 @@ test('dashboard views render counts, absences, own history and read-only late re
   });
  }finally{await server.close();}
 });
+
+test('APK coordinator default attendance shows server year and section without timetable selectors',async()=>{const server=await createServer({server:{middlewareMode:true,hmr:false},appType:'custom'});const prior=globalThis.window;try{globalThis.window={ReactNativeWebView:{postMessage(){}}};const {DefaultClassAttendance}=await server.ssrLoadModule('/src/SubjectAttendance.jsx');const html=renderToStaticMarkup(React.createElement(DefaultClassAttendance,{section:{year_number:2,section_name:'3'}}));assert.match(html,/Year 2/);assert.match(html,/Section 3/);assert.match(html,/Start attendance/);assert.doesNotMatch(html,/<select|Current period|III CSE|unscheduled day/);globalThis.window=undefined;const browser=renderToStaticMarkup(React.createElement(DefaultClassAttendance,{section:{year_number:4,section_name:'1'}}));assert.match(browser,/Year 4/);assert.match(browser,/Open the campus Android app/);assert.doesNotMatch(browser,/<button/);}finally{globalThis.window=prior;await server.close();}});

@@ -5,6 +5,16 @@ import {inCampusApp,openNativeAttendance} from './native-campus.js';
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 function useReport(path){const [data,setData]=useState(null),[error,setError]=useState(''),[version,setVersion]=useState(0);useEffect(()=>{if(!path){setData(null);return;}let active=true,controller,timer;setData(null);const read=async()=>{controller=new AbortController();try{const r=await api.get(path,{signal:controller.signal});if(active){setData(r.data);setError('');}}catch(e){if(active&&!controller.signal.aborted)setError(e.response?.data?.message||'Could not load attendance.');}finally{if(active)timer=setTimeout(read,10000);}};read();return()=>{active=false;clearTimeout(timer);controller?.abort();};},[path,version]);return {data,error,refresh:()=>setVersion(v=>v+1)};}
 function Records({rows,summary=false}){return <div className="portal-table"><table><thead><tr>{(summary?['Student','Academic year','Source','Attended / Total periods','Pending']:['Date','Subject / Student','Period','Status','Source']).map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{(summary?[r.roll_number+' · '+r.full_name,r.academic_year,r.source_kind==='demo'?'Local demo':'Official',r.attended+' / '+r.total,r.pending]:[r.date||String(r.attendance_date||'').slice(0,10),r.subject_name||r.roll_number+' · '+r.full_name,r.period,r.status,r.source_kind==='demo'?'Local demo':'Official']).map((v,j)=><td key={j}>{v}</td>)}</tr>)}{!rows.length&&<tr><td colSpan="5">No subject attendance recorded for this selection.</td></tr>}</tbody></table></div>;}
+export function DefaultClassAttendance({section}){
+ return <section className="coordinator-session-design" aria-label="Default class attendance">
+  <div className="coordinator-session-form">
+   <label>Assigned class<input readOnly aria-label="Assigned class" value={`Year ${section.year_number} · Section ${section.section_name}`}/></label>
+   <p className="coordinator-session-help">Start default attendance for your assigned class. No subject or timetable period is required.</p>
+   {inCampusApp()?<button className="coordinator-session-start" type="button" onClick={openNativeAttendance}>Start attendance</button>:<p>Open the campus Android app to start attendance from your enrolled phone.</p>}
+  </div>
+  <p className="coordinator-session-description">Choose the time limit in the app and start attendance. Students complete Bluetooth and face verification, then see Attendance marked.</p>
+ </section>;
+}
 export function SubjectAttendanceControl(){
  const catalog=useReport('/attendance/subjects'),current=useReport('/attendance/sessions/current');
  const [subject,setSubject]=useState(''),[period,setPeriod]=useState(''),[batch,setBatch]=useState(''),[duration,setDuration]=useState('10'),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
@@ -13,10 +23,11 @@ export function SubjectAttendanceControl(){
  async function act(path,body){setBusy(true);setMessage('');try{const r=await api.post(path,body),a=r.data.session;setMessage(a?'Session started. Covered periods: '+a.periods.join(', '):r.data.message);current.refresh();}catch(e){setMessage(e.response?.data?.message||'Session could not be changed.');}finally{setBusy(false);}}
  if(catalog.error)return <p role="alert">{catalog.error}</p>;if(!c)return <p>Loading subject attendance…</p>;
  const open=session&&!session.closed_at&&new Date(session.expires_at)>new Date();
+ if(!c.demo)return <DefaultClassAttendance section={c.section}/>;
  return <section className="coordinator-session-design" aria-label="Subject attendance session">
  <form className="coordinator-session-form" onSubmit={e=>{e.preventDefault();if(!busy&&subject&&period&&validDuration)act('/attendance/sessions',{subjectId:subject,period:Number(period),durationSeconds:seconds,...(batch?{batchId:batch}:{})});}}>
  <label>Subject<select required value={subject} onChange={e=>{setSubject(e.target.value);setBatch('');}}><option value="">Choose…</option>{c.subjects.map(s=><option key={s.subject_id} value={s.subject_id}>{s.name}</option>)}</select></label>
- <label>Section<select value={c.section.id} disabled aria-label="Assigned section"><option value={c.section.id}>III CSE · Section {c.section.section_name}</option></select></label>
+ <label>Section<select value={c.section.id} disabled aria-label="Assigned section"><option value={c.section.id}>Year {c.section.year_number} · Section {c.section.section_name}</option></select></label>
  <label>Current period<select required value={period} onChange={e=>setPeriod(e.target.value)}><option value="">Choose…</option>{[...new Set(c.slots.map(s=>s.period))].map(p=><option key={p} value={p}>Period {p}</option>)}</select></label>
  <label>Verification<select value="face" disabled><option value="face">Face + blink</option></select></label>
  {chosen?.kind==='lab'&&c.batches.length>0&&<label className="coordinator-session-batch">Lab batch<select required value={batch} onChange={e=>setBatch(e.target.value)}><option value="">Choose…</option>{c.batches.map(b=><option key={b.id} value={b.id}>{b.name} · {b.student_count} students</option>)}</select></label>}

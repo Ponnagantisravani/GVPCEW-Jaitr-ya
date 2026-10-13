@@ -60,7 +60,9 @@ mobileAttendanceRouter.get('/sessions',allowRoles('student_coordinator','faculty
 mobileAttendanceRouter.get('/start-options',allowRoles('student_coordinator'),async(req,res)=>{
  const s=await student(pool,req.user.sub);
  const periods=(await pool.query("select t.id timetable_id,t.academic_section_id section_id,x.section_name,t.start_time,t.end_time,su.name subject_name,a.id session_id,a.expires_at from timetable t join academic_sections x on x.id=t.academic_section_id join subjects su on su.id=t.subject_id join student_coordinator_sections cs on cs.academic_section_id=t.academic_section_id and cs.user_id=$1 left join attendance_sessions a on a.mobile_mode and a.academic_section_id=t.academic_section_id and a.period=t.id::text and (a.starts_at at time zone 'Asia/Kolkata')::date=(clock_timestamp() at time zone 'Asia/Kolkata')::date where t.academic_section_id=$2 and t.status='published' and t.entry_type in ('class','lab') and t.day_of_week=extract(dow from clock_timestamp() at time zone 'Asia/Kolkata') and (clock_timestamp() at time zone 'Asia/Kolkata')::time>=t.start_time and (clock_timestamp() at time zone 'Asia/Kolkata')::time<t.end_time order by t.start_time",[req.user.sub,s.academic_section_id])).rows;
- res.json({periods});
+ const section=(await pool.query("select x.id,x.year_number,x.section_name,d.name department_name from academic_sections x join departments d on d.id=x.department_id join student_coordinator_sections cs on cs.academic_section_id=x.id where cs.user_id=$1 and x.id=$2",[req.user.sub,s.academic_section_id])).rows[0];
+ const defaultOption=section?{timetable_id:section.id,section_id:section.id,section_name:section.section_name,subject_name:'Default attendance',year_number:section.year_number,department_name:section.department_name,default_attendance:true,start_time:'',end_time:'',session_id:null,expires_at:null}:null;
+ res.json({periods,default_option:defaultOption});
 });
 mobileAttendanceRouter.get('/active',students,async(req,res)=>{
  const s=await student(pool,req.user.sub);
@@ -68,8 +70,8 @@ mobileAttendanceRouter.get('/active',students,async(req,res)=>{
  res.json({session:a||null});
 });
 mobileAttendanceRouter.post('/session/start',allowRoles('student_coordinator'),async(req,res)=>{
- const p=parse(z.object({section_id:z.string().uuid(),timetable_id:z.string().uuid(),device_id:deviceSchema,duration_seconds:attendanceDurationSchema}).strict(),req.body);
- const result=await startMobileSession({userId:req.user.sub,deviceId:p.device_id,sectionId:p.section_id,timetableId:p.timetable_id,durationSeconds:p.duration_seconds});
+ const p=parse(z.object({section_id:z.string().uuid(),timetable_id:z.string().uuid().optional(),default_attendance:z.boolean().optional(),device_id:deviceSchema,duration_seconds:attendanceDurationSchema}).strict().refine(v=>v.default_attendance===true?!v.timetable_id:!!v.timetable_id),req.body);
+ const result=await startMobileSession({userId:req.user.sub,deviceId:p.device_id,sectionId:p.section_id,timetableId:p.timetable_id,defaultAttendance:p.default_attendance===true,durationSeconds:p.duration_seconds});
  res.status(201).json({session:result});
 });
 mobileAttendanceRouter.get('/session/:id/token',students,async(req,res)=>{

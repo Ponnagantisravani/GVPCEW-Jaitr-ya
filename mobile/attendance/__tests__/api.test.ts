@@ -15,3 +15,5 @@ test('late challenge and check-in use the existing JWT without a Bluetooth token
  const payload={student_id:'own',device_id:'bound-device',challenge_id:'c',challenge_type:'blink' as const,liveness_result:true as const,embedding_model:'mobilefacenet-v1' as const,embedding:Array(192).fill(.1),timestamp:new Date().toISOString(),integrity_token:'opaque'};
  await submitFaceAttendance(session,'s',payload,'fallback');expect(request).toHaveBeenLastCalledWith(session.apiBase,'/attendance/session/s/late-checkin',session.token,payload);
 });
+
+test('default attendance starts for the assigned section without a timetable period',async()=>{request.mockResolvedValue({status:201,body:'{}'});const option={timetable_id:'section',section_id:'section',section_name:'3',subject_name:'Default attendance',default_attendance:true,start_time:'',end_time:'',session_id:null,expires_at:null};await startAttendance(session,option,'bound-device',120);expect(request).toHaveBeenLastCalledWith(session.apiBase,'/attendance/session/start',session.token,{section_id:'section',default_attendance:true,device_id:'bound-device',duration_seconds:120});});

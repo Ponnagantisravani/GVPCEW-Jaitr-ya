@@ -32,3 +32,14 @@ test('manual face entry and tapped notification unlock the same session camera f
  expect(jest.mocked(useFaceAttendance).mock.calls.at(-1)![6]).toBe(true);expect(useBleProximity).toHaveBeenLastCalledWith(session,expect.objectContaining({id}),'bound-device',expect.any(Function));await act(async()=>view!.unmount());}
  jest.useRealTimers();
 });
+
+test('coordinator starts default attendance using only the assigned year and section',async()=>{
+ const coordinator={...session,user:{...session.user,roles:['student','student_coordinator']}};
+ const option={...period,timetable_id:'section',section_name:'3',subject_name:'Default attendance',default_attendance:true,year_number:2,start_time:'',end_time:''};
+ jest.mocked(getStartOptions).mockResolvedValue({periods:[],default_option:option});
+ jest.mocked(startAttendance).mockResolvedValue({session:{id:'default-session',section_id:'section',period:'default:session',started_at:new Date().toISOString(),expires_at:new Date(Date.now()+60000).toISOString(),status:'open'}});
+ let view:ReturnType<typeof create>;await act(async()=>{view=create(<AttendanceHome session={coordinator} deviceId="bound-device" notificationsAllowed onExpired={jest.fn()} />);});
+ expect(JSON.stringify(view!.toJSON())).toContain('Year 2 · Section 3');expect(JSON.stringify(view!.toJSON())).not.toContain('DBMS');
+ const start=view!.root.findAllByProps({accessibilityLabel:'Start class attendance'}).find(button=>typeof button.props.onPress==='function');expect(start).toBeDefined();await act(async()=>{start!.props.onPress();});
+ expect(startAttendance).toHaveBeenCalledWith(coordinator,option,'bound-device',60);await act(async()=>view!.unmount());
+});

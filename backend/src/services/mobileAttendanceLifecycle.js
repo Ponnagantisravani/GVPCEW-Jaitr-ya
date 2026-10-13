@@ -39,7 +39,7 @@ export async function closeExpiredSessions(db=pool,sectionId=null){
 
 // Called by both the mobile route and timetable worker. The advisory lock scopes
 // duplicate protection to one section; unrelated sections proceed independently.
-export async function startMobileSession({userId,deviceId,sectionId,timetableId,source='coordinator',durationSeconds=60,subjectSetup=null},db=pool){
+export async function startMobileSession({userId,deviceId,sectionId,timetableId,defaultAttendance=false,source='coordinator',durationSeconds=60,subjectSetup=null},db=pool){
  durationSeconds=parseAttendanceDuration(durationSeconds);
  requireMobileStartReady();
  // Release old session row locks before the new roster takes enrollment FK locks.
@@ -49,7 +49,7 @@ export async function startMobileSession({userId,deviceId,sectionId,timetableId,
   // Native starts and timetable starts must feed the same subject reports as
   // starts from the coordinator dashboard. Take the subject lock first in all
   // paths so racing dashboard/native starts cannot invert lock order.
-  if(!setup){
+  if(!setup&&!defaultAttendance){
    const mapped=(await c.query('select t.subject_id from timetable t join subject_attendance_subjects sa on sa.subject_id=t.subject_id where t.id=$1 and t.academic_section_id=$2',[timetableId,sectionId])).rows[0];
    if(mapped?.subject_id){
     const slot=(await timetableSlots(c,sectionId)).find(p=>p.id===timetableId);
@@ -62,9 +62,16 @@ export async function startMobileSession({userId,deviceId,sectionId,timetableId,
   if(!s||!s.face_enrolled||s.embedding_model!==MODEL||s.enrollment_status!=='approved'||s.bound_device_id!==deviceId)fail(403,'Approved MobileFaceNet enrollment on your bound device is required.');
   if(!(await c.query('select 1 from mobile_fcm_devices where user_id=$1 and device_id=$2 and can_advertise',[userId,deviceId])).rowCount)fail(409,'Register notifications on a phone that supports Bluetooth broadcasting before starting.');
   if(s.academic_section_id!==sectionId||!(await c.query('select 1 from student_coordinator_sections cs join users u on u.id=cs.user_id and u.active where (u.role=\'student_coordinator\' or exists(select 1 from user_roles ur where ur.user_id=u.id and ur.role=\'student_coordinator\')) and cs.user_id=$1 and cs.academic_section_id=$2',[userId,sectionId])).rowCount)fail(403,'Coordinator assignment to your own section is required.');
-  const t=(await c.query("select t.*,x.section_name from timetable t join academic_sections x on x.id=t.academic_section_id where t.id=$1 and t.academic_section_id=$2 and t.status='published' and t.entry_type in ('class','lab') and t.day_of_week=extract(dow from clock_timestamp() at time zone 'Asia/Kolkata') and (clock_timestamp() at time zone 'Asia/Kolkata')::time>=t.start_time and (clock_timestamp() at time zone 'Asia/Kolkata')::time<t.end_time for share of t",[timetableId,sectionId])).rows[0];
+  let t;
+  if(defaultAttendance){
+   if(source!=='coordinator'||subjectSetup||timetableId)fail(400,'Default attendance uses only your assigned section.');
+   const section=(await c.query('select * from academic_sections where id=$1',[sectionId])).rows[0];
+   if(!section)fail(403,'Section access required.');
+   const subject=(await c.query("insert into subjects(department_id,code,name) values($1,$2,'Default attendance') on conflict(code) do update set name=excluded.name returning id",[section.department_id,'DEFAULT-ATTENDANCE-'+sectionId])).rows[0];
+   t={id:'default:'+crypto.randomUUID(),subject_id:subject.id,section_name:section.section_name,classroom_id:null,faculty_id:null};
+  }else t=(await c.query("select t.*,x.section_name from timetable t join academic_sections x on x.id=t.academic_section_id where t.id=$1 and t.academic_section_id=$2 and t.status='published' and t.entry_type in ('class','lab') and t.day_of_week=extract(dow from clock_timestamp() at time zone 'Asia/Kolkata') and (clock_timestamp() at time zone 'Asia/Kolkata')::time>=t.start_time and (clock_timestamp() at time zone 'Asia/Kolkata')::time<t.end_time for share of t",[timetableId,sectionId])).rows[0];
   if(!t)fail(409,'Choose the current published timetable period.');
-  if((await c.query("select 1 from attendance_sessions where mobile_mode and academic_section_id=$1 and (status='open' or (period=$2 and (starts_at at time zone 'Asia/Kolkata')::date=(clock_timestamp() at time zone 'Asia/Kolkata')::date))",[sectionId,t.id])).rowCount)fail(409,'This period already has a session.');
+  if((await c.query("select 1 from attendance_sessions where mobile_mode and academic_section_id=$1 and (status='open' or (period=$2 and (starts_at at time zone 'Asia/Kolkata')::date=(clock_timestamp() at time zone 'Asia/Kolkata')::date))",[sectionId,t.id])).rowCount)fail(409,defaultAttendance?'Attendance is already open for your section.':'This period already has a session.');
   if(setup&&setup.section.id!==sectionId)fail(403,'Subject class differs from your own class.');
   const a=(await c.query("insert into attendance_sessions(coordinator_user_id,subject_id,section,session_code,academic_section_id,classroom_id,faculty_id,verification_mode,mobile_mode,period,starts_at,expires_at,late_expires_at,start_source) values($1,$2,$3,$4,$5,$6,$7,'mobile_ble',true,$8,statement_timestamp(),statement_timestamp()+($10::integer*interval '1 second'),statement_timestamp()+(($10::integer+120)*interval '1 second'),$9) returning *",[userId,t.subject_id,t.section_name,crypto.randomBytes(16).toString('hex'),sectionId,t.classroom_id,t.faculty_id,t.id,source,durationSeconds])).rows[0];
   await c.query("insert into session_roster select $1,s.id from students s join users u on u.id=s.user_id and u.active where s.academic_section_id=$2 and s.face_enrolled and s.enrollment_status='approved' and s.embedding_model=$3 and s.bound_device_id is not null",[a.id,sectionId,MODEL]);
@@ -73,7 +80,7 @@ export async function startMobileSession({userId,deviceId,sectionId,timetableId,
   for(let slot=0;slot<Math.ceil(durationSeconds/8);slot++)await c.query("insert into ble_tokens(session_id,slot,token,valid_from,valid_to) values($1,$2::integer,$3,$4::timestamptz+($2::integer*interval '8 seconds'),least($5::timestamptz,$4::timestamptz+(($2::integer+1)*interval '8 seconds')))",[a.id,slot,crypto.randomBytes(12).toString('hex'),a.starts_at,a.expires_at]);
   await c.query('insert into broadcasters select r.session_id,r.student_id from session_roster r join students s on s.id=r.student_id join users u on u.id=s.user_id and u.active join mobile_fcm_devices d on d.user_id=s.user_id and d.device_id=s.bound_device_id and d.can_advertise where r.session_id=$1 and r.student_id<>$2 order by random() limit 3',[a.id,s.id]);
   await enqueueSessionPushes(c,a.id);
-  await c.query('insert into audit_log(event,actor_id,session_id,details) values($1,$2,$3,$4)',['session_started',userId,a.id,JSON.stringify({section_id:sectionId,source})]);
+  await c.query('insert into audit_log(event,actor_id,session_id,details) values($1,$2,$3,$4)',['session_started',userId,a.id,JSON.stringify({section_id:sectionId,source,default_attendance:defaultAttendance})]);
   return {...(subjectSession?{subject_session_id:subjectSession.id,periods:subjectSession.periods,subject_name:subjectSession.subject_name}:{}),id:a.id,section_id:a.academic_section_id,period:a.period,started_at:a.starts_at,expires_at:a.expires_at,late_expires_at:a.late_expires_at,status:a.status,broadcast:true};
  },db);
 }

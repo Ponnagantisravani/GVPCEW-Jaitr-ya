@@ -30,7 +30,7 @@ export default function AttendanceHome({session,deviceId,notificationsAllowed,on
       const current=anchorAttendance(result,requested);
       const options=coordinator?await getStartOptions(session):{periods:[]};
       const status=result.session?await getAttendanceStatus(session,result.session.id):null;
-      if(mounted.current){setActive(current);setWindowPhase(result.phase);setOwnRecord(result.own_record);setPeriods(options.periods);setCounts(status);setError('');}
+      if(mounted.current){setActive(current);setWindowPhase(result.phase);setOwnRecord(result.own_record);setPeriods('default_option' in options&&options.default_option?[options.default_option]:options.periods);setCounts(status);setError('');}
     }catch(e){if(mounted.current){if(e instanceof ApiError&&e.status===401)onExpired();else setError(explain(e));}}
     finally{refreshing.current=false;if(mounted.current)setLoading(false);}
   },[session,deviceId,coordinator,onExpired]);
@@ -113,10 +113,10 @@ export default function AttendanceHome({session,deviceId,notificationsAllowed,on
     </>:<Text style={styles.body}>No attendance session has started for your class today. We will alert you when attendance opens.</Text>}
     {coordinator&&windowPhase!=='ble'&&<>
       <Text style={styles.subject}>Attendance time limit (seconds)</Text><TextInput accessibilityLabel="Attendance time limit in seconds" keyboardType="number-pad" value={duration} onChangeText={setDuration} editable={!busy} style={[styles.secondary,{color:'#15233c'}]}/><Text style={styles.body}>Choose 30 seconds to 30 minutes before starting.</Text>
-      {periods.length===0&&<Text style={styles.body}>No current published period is assigned to you. Refresh when your class begins.</Text>}
+      {periods.length===0&&<Text style={styles.body}>Your coordinator section is unavailable. Refresh or contact your administrator.</Text>}
       {periods.map(period=><View key={period.timetable_id} style={styles.period}>
-        <Text style={styles.subject}>{period.subject_name} · {period.section_name}</Text>
-        <Text style={styles.body}>{period.start_time.slice(0,5)}–{period.end_time.slice(0,5)}</Text>
+        <Text style={styles.subject}>{period.default_attendance?`Year ${period.year_number} · Section ${period.section_name}`:`${period.subject_name} · ${period.section_name}`}</Text>
+        <Text style={styles.body}>{period.default_attendance?'Default attendance for your assigned class':`${period.start_time.slice(0,5)}–${period.end_time.slice(0,5)}`}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Start class attendance" accessibilityState={{disabled:busy||!durationValid||!!period.session_id}} disabled={busy||!durationValid||!!period.session_id} onPress={()=>void start(period)} style={[styles.button,(busy||!!period.session_id)&&styles.disabled]}><Text style={styles.buttonText}>{period.session_id?'Attendance already started':busy?'Starting…':'Start attendance'}</Text></Pressable>
       </View>)}
     </>}

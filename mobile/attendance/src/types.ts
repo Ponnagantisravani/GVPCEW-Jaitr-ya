@@ -5,7 +5,7 @@ export type EnrollmentCapture = {embedding_model: 'mobilefacenet-v1'; model_sha2
 export type PermissionState = {missing: string[]; notificationsAllowed: boolean};
 
 export type AttendanceSession = {id: string; section_id: string; period: string; started_at: string; expires_at: string; status: 'open' | 'closed'; broadcast?: boolean; late_expires_at?: string; monotonic_expires_at?: number; monotonic_late_expires_at?: number};
-export type StartPeriod = {timetable_id: string; section_id: string; section_name: string; subject_name: string; start_time: string; end_time: string; session_id: string | null; expires_at: string | null};
+export type StartPeriod = {default_attendance?: boolean; year_number?: number; department_name?: string; timetable_id: string; section_id: string; section_name: string; subject_name: string; start_time: string; end_time: string; session_id: string | null; expires_at: string | null};
 export type AttendanceStatus = {id: string; status: 'open' | 'closed'; expires_at: string; total: number; present: number; late: number};
 export type PushEvent = {type: 'attendance_session'; session_id: string; section_id: string; user_id: string; expires_at: string; broadcast: 'true' | 'false'; opened?: 'true'};
 

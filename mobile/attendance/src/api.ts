@@ -23,9 +23,9 @@ export const logout = (session: Session) => call(session.apiBase, '/auth/logout'
 
 export const registerFcm = (session: Session, deviceId: string, token: string, canAdvertise?: boolean) => call(session.apiBase, '/devices/register-fcm', session.token, {device_id: deviceId, fcm_token: token, ...(canAdvertise===undefined?{}:{can_advertise:canAdvertise})});
 export const unregisterFcm = (session: Session, deviceId: string) => call(session.apiBase, '/devices/unregister-fcm', session.token, {device_id: deviceId});
-export const getStartOptions = (session: Session) => call<{periods: StartPeriod[]}>(session.apiBase, '/attendance/start-options', session.token);
+export const getStartOptions = (session: Session) => call<{periods: StartPeriod[]; default_option?: StartPeriod | null}>(session.apiBase, '/attendance/start-options', session.token);
 export const getActiveAttendance = (session: Session) => call<{session: AttendanceSession | null}>(session.apiBase, '/attendance/active', session.token);
-export const startAttendance = (session: Session, period: StartPeriod, deviceId: string, durationSeconds=60) => call<{session: AttendanceSession}>(session.apiBase, '/attendance/session/start', session.token, {section_id: period.section_id, timetable_id: period.timetable_id, device_id: deviceId,duration_seconds:durationSeconds});
+export const startAttendance = (session: Session, period: StartPeriod, deviceId: string, durationSeconds=60) => call<{session: AttendanceSession}>(session.apiBase, '/attendance/session/start', session.token, {section_id: period.section_id, ...(period.default_attendance?{default_attendance:true}:{timetable_id:period.timetable_id}), device_id: deviceId,duration_seconds:durationSeconds});
 export const getAttendanceStatus = (session: Session, id: string) => call<AttendanceStatus>(session.apiBase, '/attendance/session/'+encodeURIComponent(id)+'/status', session.token);
 
 export const getBleToken=(session: Session,id: string,deviceId: string)=>call<BleToken>(session.apiBase,'/attendance/session/'+encodeURIComponent(id)+'/token?device_id='+encodeURIComponent(deviceId),session.token);

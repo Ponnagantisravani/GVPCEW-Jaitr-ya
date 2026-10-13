@@ -99,3 +99,9 @@ For a sleeping backend, run tools/attendance-keep-warm.mjs from a separate awake
 ## Stage 7 validation
 
 See [the database load report and reproducible runner](../../docs/mobile-attendance-stage-7.md) and [physical phone acceptance checklist](../../docs/mobile-attendance-phone-tests.md). Local simulations exercise actual routes and SQL with synthetic face/Google proofs; phone and classroom results remain pending.
+
+## Default class attendance
+
+The coordinator attendance screen uses the server-assigned year and section. Tap Start attendance after choosing a duration; no subject or timetable period is required. The backend checks coordinator assignment, approved enrollment, bound device and Bluetooth capability, then sends notifications to the eligible class roster. Students complete the existing Bluetooth and face checks and see Attendance marked after the server accepts their submission.
+
+Default sessions use an internal Default attendance subject per section so records and history remain separate from subject attendance reports. Only one mobile session may be open per section; another default session may start after it closes. Deploy the updated backend and install the rebuilt APK together. No database migration is required.
