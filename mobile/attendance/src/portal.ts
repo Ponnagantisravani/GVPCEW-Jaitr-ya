@@ -8,16 +8,22 @@ export const portalRoles: Record<string,{label:string;path:string}>={
  admin:{label:'Administrator dashboard',path:'/admin.html'},
 };
 export const studentRole=(role:string)=>role==='student'||role==='student_coordinator';
-export function portalOrigin(session:Session){
+export function portalOrigin(session:Pick<Session,'apiBase'>){
  const url=new URL(session.apiBase);
  if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/api')throw Error('Use the campus HTTPS server address ending in /api.');
  return session.apiBase===API_BASE_URL ? new URL(PORTAL_BASE_URL).origin : url.origin;
+}
+export function portalLoginAddress(apiBase:string){
+ const url=new URL(apiBase);
+ if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/api')throw Error('Use the campus HTTPS server address ending in /api.');
+ const origin=apiBase===API_BASE_URL?new URL(PORTAL_BASE_URL).origin:url.origin;
+ return origin+'/index.html';
 }
 export function portalAddress(session:Session,role:string){
  if(!session.user.roles.includes(role)||!portalRoles[role])throw Error('This dashboard is not assigned to your account.');
  return portalOrigin(session)+portalRoles[role].path;
 }
-export function portalNavigationAllowed(session:Session,url:string){
+export function portalNavigationAllowed(session:Pick<Session,'apiBase'>,url:string){
  try{return new URL(url).origin===portalOrigin(session);}catch{return false;}
 }
 export function portalBootstrap(session:Session,role:string){

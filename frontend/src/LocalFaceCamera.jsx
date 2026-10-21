@@ -22,7 +22,7 @@ export function LocalFaceCamera({enrolled,sessionId,sectionName,canCheckIn,phase
  async function verify(){if(attempts.current.count>=3){stop();setStage('error');setError('Three attempts used for this session.');return;}attempts.current.count++;setBusy(true);setError('');setStage('blink');const current=++operation.current;controller.current=new AbortController();try{
  const {data}=await api.post('/local-attendance-demo/challenge',{session_id:sessionId},{signal:controller.current.signal});if(current!==operation.current)return;const frames=[];
  for(let i=0;i<32;i++){if(current!==operation.current)return;frames.push(capture());await new Promise(r=>setTimeout(r,125));}
- if(current!==operation.current)return;setStage('matching');const result=await api.post('/local-attendance-demo/check-in',{session_id:sessionId,challenge_id:data.challenge_id,frames},{signal:controller.current.signal});if(current!==operation.current)return;
+ if(current!==operation.current)return;setStage('matching');const result=await api.post('/local-attendance-demo/check-in',{session_id:sessionId,challenge_id:data.challenge_id,frames},{signal:controller.current.signal,timeout:65000});if(current!==operation.current)return;
  if(!result.data.face_verified||!result.data.blink_observed||!['PRESENT','LATE'].includes(result.data.status))throw Error('Verification was not confirmed. Attendance was not marked.');setStatus(result.data.status);stop();setStage('success');onSaved();
  }catch(e){if(current===operation.current){stop();setError(e.response?.data?.message||e.message||'Face not recognized, try again');setStage('error');}}}
  const success=stage==='success',matching=stage==='matching';

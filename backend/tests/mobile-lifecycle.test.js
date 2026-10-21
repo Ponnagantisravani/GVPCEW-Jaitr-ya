@@ -65,8 +65,8 @@ test('current windows, coordinator counts, report access and student history use
    record={status:'LATE',method:'fallback',is_late:true};r=await get('/current?device_id='+device);assert.equal((await r.json()).own_record.status,'LATE');record=null;
   });
   await t.test('coordinator sees unmarked names; ordinary students receive counts only',async()=>{
-   roles=['student_coordinator'];let r=await get('/session/'+id+'/status');assert.equal(r.status,200);let data=await r.json();assert.equal(data.total,3);assert.equal(data.present,1);assert.equal(data.late,1);assert.equal(data.absent,1);assert.equal(data.unmarked.length,1);assert(data.final);
-   roles=['student'];r=await get('/session/'+id+'/status');data=await r.json();assert(!('unmarked' in data));sectionAccess=false;r=await get('/session/'+id+'/status');assert.equal(r.status,403);sectionAccess=true;
+   roles=['student_coordinator'];let r=await get('/session/'+id+'/status');assert.equal(r.status,200);let data=await r.json();assert.equal(data.total,3);assert.equal(data.present,1);assert.equal(data.late,1);assert.equal(data.absent,1);assert.equal(data.unmarked.length,1);assert.equal(data.present_students.length,2);assert(data.present_students.every(s=>s.status==='PRESENT'||s.status==='LATE'));assert(data.final);
+   roles=['student'];r=await get('/session/'+id+'/status');data=await r.json();assert(!('unmarked' in data));assert(!('present_students' in data));sectionAccess=false;r=await get('/session/'+id+'/status');assert.equal(r.status,403);sectionAccess=true;
   });
   await t.test('teacher reports require section authority and closure, and flag late rows with similarity',async()=>{
    roles=['faculty'];a.expires_at=new Date(Date.now()+60000);let r=await get('/session/'+id+'/report');assert.equal(r.status,409);a.expires_at=new Date(Date.now()-1000);

@@ -1,4 +1,5 @@
 import './coordinator-session.css';
+import './coordinator-demo-signal.css';
 import React,{useEffect,useState} from 'react';
 import {api} from './api.js';
 import {inCampusApp,openNativeAttendance} from './native-campus.js';
@@ -8,17 +9,17 @@ function Records({rows,summary=false}){return <div className="portal-table"><tab
 export function DefaultClassAttendance({section}){
  return <section className="coordinator-session-design" aria-label="Default class attendance">
   <div className="coordinator-session-form">
-   <label>Assigned class<input readOnly aria-label="Assigned class" value={`Year ${section.year_number} · Section ${section.section_name}`}/></label>
-   <p className="coordinator-session-help">Start default attendance for your assigned class. No subject or timetable period is required.</p>
-   {inCampusApp()?<button className="coordinator-session-start" type="button" onClick={openNativeAttendance}>Start attendance</button>:<p>Open the campus Android app to start attendance from your enrolled phone.</p>}
+   <label className="coordinator-assigned-class">Assigned class<input readOnly aria-label="Assigned class" value={`Year ${section.year_number} · Section ${section.section_name}`}/></label>
+   <p className="coordinator-session-help">Start attendance for your assigned class. No subject or timetable period is required.</p>
+   {inCampusApp()?<button className="coordinator-session-start" type="button" onClick={()=>openNativeAttendance({startDefaultAttendance:true})}>Start attendance</button>:<p>Open the campus Android app to start attendance from your enrolled phone.</p>}
   </div>
-  <p className="coordinator-session-description">Choose the time limit in the app and start attendance. Students complete Bluetooth and face verification, then see Attendance marked.</p>
+  <p className="coordinator-session-description">Start once from the campus app. Student phones detect the class signal, open face verification, and show “Attendance marked”. This dashboard refreshes the marked-student list automatically.</p>
  </section>;
 }
 export function SubjectAttendanceControl(){
  const catalog=useReport('/attendance/subjects'),current=useReport('/attendance/sessions/current');
  const [subject,setSubject]=useState(''),[period,setPeriod]=useState(''),[batch,setBatch]=useState(''),[duration,setDuration]=useState('10'),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
- const c=catalog.data,chosen=c?.subjects.find(s=>s.subject_id===subject),session=current.data?.session;
+ const c=catalog.data,availableSubjects=c?.subjects.filter(s=>c.slots.some(slot=>slot.subject_id===s.subject_id))||[],chosen=availableSubjects.find(s=>s.subject_id===subject),subjectPeriods=[...new Set((c?.slots||[]).filter(slot=>slot.subject_id===subject).map(slot=>slot.period))],session=current.data?.session;
  const seconds=Math.round(Number(duration)*60),validDuration=Number.isFinite(Number(duration))&&Number(duration)>=.5&&Number(duration)<=30&&Number.isInteger(Number(duration)*60);
  async function act(path,body){setBusy(true);setMessage('');try{const r=await api.post(path,body),a=r.data.session;setMessage(a?'Session started. Covered periods: '+a.periods.join(', '):r.data.message);current.refresh();}catch(e){setMessage(e.response?.data?.message||'Session could not be changed.');}finally{setBusy(false);}}
  if(catalog.error)return <p role="alert">{catalog.error}</p>;if(!c)return <p>Loading subject attendance…</p>;
@@ -26,18 +27,19 @@ export function SubjectAttendanceControl(){
  if(!c.demo)return <DefaultClassAttendance section={c.section}/>;
  return <section className="coordinator-session-design" aria-label="Subject attendance session">
  <form className="coordinator-session-form" onSubmit={e=>{e.preventDefault();if(!busy&&subject&&period&&validDuration)act('/attendance/sessions',{subjectId:subject,period:Number(period),durationSeconds:seconds,...(batch?{batchId:batch}:{})});}}>
- <label>Subject<select required value={subject} onChange={e=>{setSubject(e.target.value);setBatch('');}}><option value="">Choose…</option>{c.subjects.map(s=><option key={s.subject_id} value={s.subject_id}>{s.name}</option>)}</select></label>
+ <label>Subject<select required value={subject} onChange={e=>{setSubject(e.target.value);setPeriod('');setBatch('');}}><option value="">Choose…</option>{availableSubjects.map(s=><option key={s.subject_id} value={s.subject_id}>{s.name}</option>)}</select></label>
  <label>Section<select value={c.section.id} disabled aria-label="Assigned section"><option value={c.section.id}>Year {c.section.year_number} · Section {c.section.section_name}</option></select></label>
- <label>Current period<select required value={period} onChange={e=>setPeriod(e.target.value)}><option value="">Choose…</option>{[...new Set(c.slots.map(s=>s.period))].map(p=><option key={p} value={p}>Period {p}</option>)}</select></label>
+ <label>Current period<select required value={period} onChange={e=>setPeriod(e.target.value)} disabled={!subject}><option value="">Choose…</option>{subjectPeriods.map(p=><option key={p} value={p}>Period {p}</option>)}</select></label>
  <label>Verification<select value="face" disabled><option value="face">Face + blink</option></select></label>
  {chosen?.kind==='lab'&&c.batches.length>0&&<label className="coordinator-session-batch">Lab batch<select required value={batch} onChange={e=>setBatch(e.target.value)}><option value="">Choose…</option>{c.batches.map(b=><option key={b.id} value={b.id}>{b.name} · {b.student_count} students</option>)}</select></label>}
  <p className="coordinator-session-help">Students verify their own face and blink once. Labs cover up to three consecutive periods.</p>
  <label>Duration (minutes)<input required type="number" min="0.5" max="30" step="0.5" value={duration} onChange={e=>setDuration(e.target.value)}/></label>
  <button className="coordinator-session-start" type="submit" disabled={busy||!subject||!period||!validDuration||(chosen?.kind==='lab'&&c.batches.length>0&&!batch)}>{busy?'Starting…':'Start session'}</button>
  </form>
+ {open&&c.demo&&<aside className="coordinator-demo-signal" role="status"><strong>Room signal · simulated</strong><span>Student dashboard receives the demo session; the live webcam blink and face comparison can be tested.</span><small>Browser preview only · no Bluetooth radio broadcast is sent.</small></aside>}
  {inCampusApp()&&<button type="button" onClick={openNativeAttendance}>Open Bluetooth broadcasting and face verification</button>}<p className="coordinator-session-description">Students in the selected {batch?'batch':'section'} can open Attendance to complete face verification. Unmarked students stay Pending until the session closes.</p>
  {c.demo&&<p className="coordinator-session-demo">Local webcam demo · Results are stored separately from official attendance.</p>}
- {!c.slots.length&&<p>No published periods for today. Attendance cannot start on an unscheduled day.</p>}
+ {!availableSubjects.length&&<p>No mapped subjects have a published period in today's timetable for this section.</p>}
  {open?<div className="coordinator-session-live"><span><strong>{session.subject_name}</strong> · Periods {session.periods.join(', ')} · Open</span><button type="button" disabled={busy} onClick={()=>act('/attendance/sessions/'+session.id+'/end',{})}>End session</button></div>:<p className="coordinator-session-empty">No active subject sessions.</p>}
  {current.error&&<p role="alert">{current.error}</p>}{message&&<p role="status">{message}</p>}
  </section>;

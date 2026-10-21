@@ -105,3 +105,19 @@ See [the database load report and reproducible runner](../../docs/mobile-attenda
 The coordinator attendance screen uses the server-assigned year and section. Tap Start attendance after choosing a duration; no subject or timetable period is required. The backend checks coordinator assignment, approved enrollment, bound device and Bluetooth capability, then sends notifications to the eligible class roster. Students complete the existing Bluetooth and face checks and see Attendance marked after the server accepts their submission.
 
 Default sessions use an internal Default attendance subject per section so records and history remain separate from subject attendance reports. Only one mobile session may be open per section; another default session may start after it closes. Deploy the updated backend and install the rebuilt APK together. No database migration is required.
+
+## Attendance-only APK 1.1
+
+The app opens native student or coordinator attendance directly after login and enrollment. Campus web dashboards are no longer displayed. Access comes from server-assigned student/student_coordinator roles. Coordinators start default attendance for their own assigned section; students complete Bluetooth proximity and face verification. The package and release signing identity remain unchanged so installing this update preserves enrolled phone identity.
+
+## Enrollment recovery in APK 1.2
+
+Attendance is shown only for approved MobileFaceNet enrollment bound to this app installation. Pending, rejected, legacy and mismatched-device enrollments display their actual status. A logged-in account with the existing server admin role can choose Reset my face registration and confirm deletion of its own template/binding through the existing admin reset endpoint. Students without admin permission must contact an administrator. Attendance records are preserved. Coordinator section discovery is independent of current-session enrollment checks.
+
+## Full dashboard and attendance APK 1.3
+
+The native attendance app also opens the assigned campus web dashboard in a secured in-app WebView. Student coordinators can open **Attendance Session** and start attendance for their assigned class without selecting a timetable period or subject. Tapping **Start attendance** returns to the native attendance screen and starts that default class session with the selected time limit.
+
+Student phones receive the live session, scan for the coordinator's Bluetooth signal, and automatically open the blink and face check after the signal is verified while the app is active. Each student sees **Attendance marked** after the server accepts the check. The coordinator dashboard refreshes the present and late student list and unmarked roster every few seconds. The same assigned college login, backend, enrollment, device binding, and face verification are used by both the dashboard and attendance screen.
+
+Android limits prevent an app from opening the camera from the background without a user action. If the attendance app is backgrounded, the student must open it from the attendance notification; Bluetooth detection and camera verification then continue automatically while the app is active. Firebase, Bluetooth permissions, the server, and approved phone enrollment must be configured for live classroom use.

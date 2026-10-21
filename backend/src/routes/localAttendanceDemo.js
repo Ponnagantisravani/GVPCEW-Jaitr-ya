@@ -14,7 +14,9 @@ async function ownStudent(c,user,lock=false){const s=(await c.query('select id,a
 async function withTransaction(fn){const c=await pool.connect();try{await c.query('begin');const result=await fn(c);await c.query('commit');return result;}catch(e){await c.query('rollback');throw e;}finally{c.release();}}
 async function faceService(path,body) {
  if(!process.env.LOCAL_FACE_SERVICE_KEY)fail(503,'Start the backend with dev:local-demo to enable the webcam service.');
- let response;try{response=await fetch('http://127.0.0.1:5002/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-Face-Service-Key':process.env.LOCAL_FACE_SERVICE_KEY},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});}catch{fail(503,'Local face service is unavailable. Check backend startup and retry.');}
+ // CPU-only OpenCV may need longer for the 32-frame liveness sequence on a
+ // student laptop; the browser request uses a matching longer timeout.
+ let response;try{response=await fetch('http://127.0.0.1:5002/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-Face-Service-Key':process.env.LOCAL_FACE_SERVICE_KEY},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});}catch(error){console.warn('Local attendance face service request failed:',error.name,error.message);fail(503,'Local face service is unavailable. Check backend startup and retry.');}
  const result=await response.json();if(!response.ok)fail(response.status===422?422:503,result.message||'Face verification failed.');return result;
 }
 const imageSchema=z.string().max(100000).regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/);

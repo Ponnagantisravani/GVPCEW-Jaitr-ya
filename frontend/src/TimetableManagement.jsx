@@ -349,6 +349,16 @@ export function TimetableManagement({ role = 'academic_coordinator', rows = [], 
   const isStudent = role === 'student';
   const isFaculty = role === 'faculty';
   const [facultyViewMode, setFacultyViewMode] = useState('schedule');
+  const [registeredFaculty, setRegisteredFaculty] = useState([]);
+
+  useEffect(() => {
+    if (!isEditor) return;
+    let active = true;
+    api.get('/timetables/catalog').then(({data}) => {
+      if (active) setRegisteredFaculty(data.faculty || []);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [isEditor]);
 
   // Load official published timetables from server
   useEffect(() => {
@@ -499,6 +509,10 @@ export function TimetableManagement({ role = 'academic_coordinator', rows = [], 
     });
     return [...entries.values()];
   }, [currentTimetable]);
+  const selectedEditorFacultyId = isEditingCell?.data?.facultyId || (() => {
+    const matches = registeredFaculty.filter(f => f.full_name === isEditingCell?.data?.faculty);
+    return matches.length === 1 ? matches[0].id : '';
+  })();
 
   // Proactively check and cleanse corrupted localStorage strings (e.g. repeated footnotes)
   useEffect(() => {
@@ -1972,12 +1986,18 @@ export function TimetableManagement({ role = 'academic_coordinator', rows = [], 
 
               <div className="form-group">
                 <label>Faculty Incharge</label>
-                <input
-                  type="text"
-                  value={isEditingCell.data.faculty}
-                  onChange={e => setIsEditingCell({ ...isEditingCell, data: { ...isEditingCell.data, faculty: e.target.value } })}
-                  placeholder="e.g. Prof. R. Kiran"
-                />
+                <select
+                  required={Boolean(isEditingCell.data.subject && isEditingCell.data.type !== 'break')}
+                  value={selectedEditorFacultyId}
+                  onChange={e => {
+                    const selectedFaculty = registeredFaculty.find(f => f.id === e.target.value);
+                    setIsEditingCell({ ...isEditingCell, data: { ...isEditingCell.data, facultyId: selectedFaculty?.id || '', faculty: selectedFaculty?.full_name || '' } });
+                  }}
+                >
+                  <option value="">Select registered faculty</option>
+                  {isEditingCell.data.faculty && !registeredFaculty.some(f => f.full_name === isEditingCell.data.faculty) && <option value="" disabled>Unregistered: {isEditingCell.data.faculty}</option>}
+                  {registeredFaculty.map(f => <option key={f.id} value={f.id}>{f.full_name} · {f.email}</option>)}
+                </select>
               </div>
 
               <div className="form-group">

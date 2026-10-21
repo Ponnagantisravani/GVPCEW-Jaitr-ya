@@ -56,6 +56,10 @@ export async function startMobileSession({userId,deviceId,sectionId,timetableId,
     if(!slot)fail(409,'Choose a published period for today.');
     setup=await prepareSubjectSession(c,userId,{subjectId:mapped.subject_id,period:slot.period});
    }
+  if(setup){
+   const selected=setup.slots.find(p=>p.id===timetableId&&p.subject_id===setup.subject.subject_id&&(!subjectSetup||p.period===subjectSetup.period));
+   if(!selected)fail(409,'Choose a period that matches the selected subject in today\'s published timetable.');
+  }
   }
   await c.query('select pg_advisory_xact_lock(hashtext($1))',['mobile-attendance:'+sectionId]);
   const s=(await c.query('select * from students where user_id=$1 for update',[userId])).rows[0];

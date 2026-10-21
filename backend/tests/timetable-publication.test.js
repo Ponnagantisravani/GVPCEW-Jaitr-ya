@@ -8,6 +8,19 @@ test('resolves registered faculty by ID, email, and normalized name', () => {
   for (const slot of [{facultyId:'one'}, {faculty:'sravani@example.com'}, {faculty:'K Sravani'}])
     assert.equal(resolveTimetableFaculty(faculty,slot)?.id,'one');
 });
+test('resolves title and middle-name variants when the supplied initials agree', () => {
+  const directory = [{id:'aswini',full_name:'Madhavi Aswini',email:'aswini@example.com'}];
+  assert.equal(resolveTimetableFaculty(directory,{faculty:'Dr. M. Aswini'})?.id,'aswini');
+  assert.equal(resolveTimetableFaculty(directory,{faculty:'Mrs. Madhavi Aswini'})?.id,'aswini');
+  assert.equal(resolveTimetableFaculty(directory,{faculty:'Dr. A. Aswini'}),null);
+});
+test('chooses the sole institutional account over a duplicate synthetic seed account', () => {
+  const directory = [
+    {id:'seed',full_name:'Mrs. M. Aswini',email:'timetable-ma@faculty.invalid'},
+    {id:'real',full_name:'Mrs. M. Aswini',email:'aswini@gvpcew.ac.in'}
+  ];
+  assert.equal(resolveTimetableFaculty(directory,{faculty:'Dr. M. Aswini'})?.id,'real');
+});
 test('unmatched, partial, shared and ambiguous names never pick an arbitrary account', () => {
   for (const name of ['', 'Librarian','Sravani','K Sravani / P Vani'])
     assert.equal(resolveTimetableFaculty(faculty,{faculty:name}),null);

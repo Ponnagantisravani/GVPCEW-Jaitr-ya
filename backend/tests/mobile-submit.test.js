@@ -78,25 +78,11 @@ test('real submit route verifies server match, integrity hash and challenge then
    body=payload();integrityHash=requestHash(id,body,'ble');r=await post(body);assert.equal(r.status,403);assert.equal(record,null);
    reset();body={...payload(),challenge_type:'smile'};r=await post(body);assert.equal(r.status,400);assert.equal(record,null);
   });
-  await t.test('late check-in replaces ABSENT with LATE, omits BLE checks and records review and repeated-fallback audits',async()=>{
-   reset();a.status='closed';a.expires_at=new Date(Date.now()-1000);ch.method='fallback';record={status:'ABSENT',method:null,is_late:false};
-   const start=calls.length;let r=await post({device_id:device,method:'fallback'},'/session/'+id+'/challenge');assert.equal(r.status,201);
-   let body=payload();delete body.ble_token;integrityHash=requestHash(id,body,'fallback');r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,201);const response=await r.json();assert.equal(response.status,'LATE');assert.equal(response.method,'fallback');assert.equal(response.is_late,true);assert.equal(response.similarity,1);
-   assert.deepEqual(record,{status:'LATE',method:'fallback',is_late:true});assert(!calls.slice(start).some(c=>c.sql.includes('from ble_tokens')));assert(calls.slice(start).some(c=>c.sql.startsWith('select count(*)::int n from mobile_attendance_challenges')&&c.args[2]==='fallback'));
-   const audits=calls.slice(start).filter(c=>c.sql.startsWith('insert into audit_log')).map(c=>c.args[0]);assert(audits.includes('late_checkin_review'));assert(audits.includes('frequent_fallback'));assert(calls.slice(start).some(c=>c.sql.includes('for no key update')));
-   r=await post({device_id:device,method:'fallback'},'/session/'+id+'/challenge');assert.equal(r.status,409);r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,403);assert.equal(calls.slice(start).filter(c=>c.sql.startsWith('insert into attendance_records')).length,1);
-  });
-  await t.test('fallback is unavailable during the main window and after its two-minute expiry',async()=>{
-   reset();ch.method='fallback';let body=payload();delete body.ble_token;integrityHash=requestHash(id,body,'fallback');let r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,409);
-   a.status='closed';a.expires_at=new Date(Date.now()-121000);a.late_expires_at=new Date(Date.now()-1);r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,409);r=await post({device_id:device,method:'fallback'},'/session/'+id+'/challenge');assert.equal(r.status,409);assert.equal(record,null);
-  });
-  await t.test('fallback rejects a supplied BLE token and an integrity hash from the main method',async()=>{
-   reset();a.status='closed';a.expires_at=new Date(Date.now()-1000);ch.method='fallback';let body=payload();let r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,400);
-   r=await post({device_id:device,method:'fallback',ble_token:body.ble_token},'/session/'+id+'/challenge');assert.equal(r.status,400);
-   delete body.ble_token;integrityHash=requestHash(id,body,'ble');r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,403);assert.equal(record,null);
-  });
-  await t.test('an accepted main attendance cannot be overwritten by a late attempt',async()=>{
-   reset();a.status='closed';a.expires_at=new Date(Date.now()-1000);ch.method='fallback';record={status:'PRESENT',method:'ble',is_late:false};let body=payload();delete body.ble_token;integrityHash=requestHash(id,body,'fallback');let r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,409);assert.equal(record.status,'PRESENT');
+  await t.test('late attendance without an active BLE token is rejected and never writes a record',async()=>{
+   reset();a.status='closed';a.expires_at=new Date(Date.now()-1000);ch.method='fallback';record={status:'ABSENT',method:null,is_late:false};const start=calls.length;
+   let r=await post({device_id:device,method:'fallback'},'/session/'+id+'/challenge');assert.equal(r.status,400);
+   const body=payload();delete body.ble_token;r=await post(body,'/session/'+id+'/late-checkin');assert.equal(r.status,403);assert.equal((await r.json()).message,'Bluetooth verification is required while the attendance session is open.');
+   assert.deepEqual(record,{status:'ABSENT',method:null,is_late:false});assert.equal(calls.slice(start).filter(c=>c.sql.startsWith('insert into attendance_records')).length,0);assert.equal(calls.slice(start).some(c=>c.sql.includes('from ble_tokens')),false);
   });
  }finally{globalThis.fetch=originalFetch;pool.query=oldQ;pool.connect=oldC;server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await pool.end();}
 });

@@ -64,14 +64,17 @@ mobileAttendanceRouter.get('/start-options',allowRoles('student_coordinator'),as
  const defaultOption=section?{timetable_id:section.id,section_id:section.id,section_name:section.section_name,subject_name:'Default attendance',year_number:section.year_number,department_name:section.department_name,default_attendance:true,start_time:'',end_time:'',session_id:null,expires_at:null}:null;
  res.json({periods,default_option:defaultOption});
 });
+// The native coordinator picker uses the same mapped subjects and period rows
+// as the subject attendance dashboard. Keep start-time and roster validation
+// in startMobileSession; this catalog only describes today's published slots.
 mobileAttendanceRouter.get('/active',students,async(req,res)=>{
  const s=await student(pool,req.user.sub);
  const a=(await pool.query("select a.id,a.academic_section_id section_id,a.period,a.starts_at started_at,a.expires_at,a.status,(a.coordinator_user_id=$1 or exists(select 1 from broadcasters b where b.session_id=a.id and b.student_id=$2)) broadcast from attendance_sessions a join session_roster r on r.session_id=a.id and r.student_id=$2 where a.mobile_mode and a.academic_section_id=$3 and a.status='open' and a.expires_at>clock_timestamp() order by a.starts_at desc limit 1",[req.user.sub,s.id,s.academic_section_id])).rows[0];
  res.json({session:a||null});
 });
 mobileAttendanceRouter.post('/session/start',allowRoles('student_coordinator'),async(req,res)=>{
- const p=parse(z.object({section_id:z.string().uuid(),timetable_id:z.string().uuid().optional(),default_attendance:z.boolean().optional(),device_id:deviceSchema,duration_seconds:attendanceDurationSchema}).strict().refine(v=>v.default_attendance===true?!v.timetable_id:!!v.timetable_id),req.body);
- const result=await startMobileSession({userId:req.user.sub,deviceId:p.device_id,sectionId:p.section_id,timetableId:p.timetable_id,defaultAttendance:p.default_attendance===true,durationSeconds:p.duration_seconds});
+ const p=parse(z.object({section_id:z.string().uuid(),timetable_id:z.string().uuid().optional(),default_attendance:z.boolean().optional(),subject_id:z.string().uuid().optional(),period:z.number().int().min(1).max(20).optional(),batch_id:z.string().uuid().optional(),device_id:deviceSchema,duration_seconds:attendanceDurationSchema}).strict().refine(v=>v.default_attendance===true?!v.timetable_id:!!v.timetable_id).refine(v=>Boolean(v.subject_id)===Boolean(v.period),'Subject and period must be provided together.').refine(v=>!v.batch_id||Boolean(v.subject_id),'A batch requires a selected subject.').refine(v=>!v.default_attendance||(!v.subject_id&&!v.period&&!v.batch_id),'Default attendance cannot include a subject period.'),req.body);
+ const result=await startMobileSession({userId:req.user.sub,deviceId:p.device_id,sectionId:p.section_id,timetableId:p.timetable_id,defaultAttendance:p.default_attendance===true,durationSeconds:p.duration_seconds,subjectSetup:p.subject_id?{subjectId:p.subject_id,period:p.period,batchId:p.batch_id}:null});
  res.status(201).json({session:result});
 });
 mobileAttendanceRouter.get('/session/:id/token',students,async(req,res)=>{
@@ -93,7 +96,7 @@ mobileAttendanceRouter.post('/session/:id/token/validate',students,async(req,res
  res.json({accepted:true,valid_for_ms:Math.max(0,end-Date.now()),server_time:new Date().toISOString()});
 });
 mobileAttendanceRouter.post('/session/:id/challenge',students,async(req,res)=>{
- const p=parse(z.object({device_id:deviceSchema,method:z.enum(['ble','fallback']),ble_token:z.string().regex(/^[a-f0-9]{24}$/).optional()}).strict().refine(v=>v.method==='ble'?!!v.ble_token:v.ble_token===undefined),req.body);
+ const p=parse(z.object({device_id:deviceSchema,method:z.literal('ble'),ble_token:z.string().regex(/^[a-f0-9]{24}$/)}).strict(),req.body);
  const ch=await transaction(async c=>{
  const a=await session(c,req.params.id),s=await student(c,req.user.sub);await member(c,a.id,s);enrolled(s,p.device_id);ownSection(a,s);
  if(!windowOpen(a,p.method))fail(409,'Attendance window closed.');
@@ -107,7 +110,8 @@ mobileAttendanceRouter.post('/session/:id/challenge',students,async(req,res)=>{
 });
 function validateChallenge(ch,a,s,p,method){if(!ch||ch.session_id!==a.id||ch.student_id!==s.id||ch.device_id!==p.device_id||ch.method!==method||ch.challenge_type!==p.challenge_type||ch.used_at||new Date(ch.expires_at).getTime()<=Date.now())fail(403,'Challenge invalid, expired, or used.');}
 async function submit(req,res,method){
- const p=parse(submissionSchema,req.body);if(method==='fallback'&&p.ble_token)fail(400,'Late attendance does not use a Bluetooth token.');if(method==='ble'&&!p.ble_token)fail(400,'Bluetooth token required.');
+ if(method!=='ble')fail(403,'Bluetooth verification is required while the attendance session is open.');
+ const p=parse(submissionSchema,req.body);
  const a=await session(pool,req.params.id),s=await student(pool,req.user.sub);ownSection(a,s);
  if(p.student_id!==s.id)fail(403,'Submit only your own attendance.');await member(pool,a.id,s);
  if(!windowOpen(a,method))fail(409,'Attendance window closed.');
@@ -141,7 +145,7 @@ mobileAttendanceRouter.get('/session/:id/status',async(req,res)=>{
  const a=await session(pool,req.params.id);if(!await canRead(a,req.user))fail(403,'Section access required.');
  const manager=req.user.roles.includes('student_coordinator')&&(await pool.query('select 1 from student_coordinator_sections where user_id=$1 and academic_section_id=$2',[req.user.sub,a.academic_section_id])).rowCount;
  const rows=(await pool.query('select s.id student_id,s.roll_number,u.full_name,r.status from session_roster sr join students s on s.id=sr.student_id join users u on u.id=s.user_id left join attendance_records r on r.session_id=sr.session_id and r.student_id=sr.student_id where sr.session_id=$1 order by s.roll_number',[a.id])).rows;
- res.json({id:a.id,expires_at:a.expires_at,late_expires_at:a.late_expires_at,server_time:new Date().toISOString(),valid_for_ms:windowOpen(a,'ble')?Math.max(0,new Date(a.expires_at).getTime()-Date.now()):0,final:Date.now()>=new Date(a.late_expires_at).getTime(),status:windowOpen(a,'ble')?'open':'closed',absent:rows.filter(r=>!r.status||r.status==='ABSENT').length,total:rows.length,present:rows.filter(r=>r.status==='PRESENT').length,late:rows.filter(r=>r.status==='LATE').length,...(manager?{unmarked:rows.filter(r=>!r.status||r.status==='ABSENT')}: {})});
+ res.json({id:a.id,expires_at:a.expires_at,late_expires_at:a.late_expires_at,server_time:new Date().toISOString(),valid_for_ms:windowOpen(a,'ble')?Math.max(0,new Date(a.expires_at).getTime()-Date.now()):0,final:Date.now()>=new Date(a.late_expires_at).getTime(),status:windowOpen(a,'ble')?'open':'closed',absent:rows.filter(r=>!r.status||r.status==='ABSENT').length,total:rows.length,present:rows.filter(r=>r.status==='PRESENT').length,late:rows.filter(r=>r.status==='LATE').length,...(manager?{unmarked:rows.filter(r=>!r.status||r.status==='ABSENT'),present_students:rows.filter(r=>r.status==='PRESENT'||r.status==='LATE')}: {})});
 });
 mobileAttendanceRouter.get('/session/:id/report',allowRoles('faculty','academic_coordinator','admin'),async(req,res)=>{
  const a=await session(pool,req.params.id);if(!await canRead(a,req.user,false))fail(403,'Section report access required.');if(Date.now()<new Date(a.expires_at).getTime())fail(409,'Reports are available after the session closes.');

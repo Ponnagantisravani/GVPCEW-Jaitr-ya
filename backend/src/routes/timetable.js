@@ -114,6 +114,7 @@ timetableRouter.post('/publish-grid', allowRoles('academic_coordinator','admin')
     await client.query("select pg_advisory_xact_lock(hashtext('timetable-write'))");
 
     let totalPublishedSlots = 0;
+    const unmatchedFacultySlots = [];
     const affectedSectionIds = [];
 
     const parseTimeRange = (rawTime) => {
@@ -264,7 +265,10 @@ timetableRouter.post('/publish-grid', allowRoles('academic_coordinator','admin')
             }
 
             const fac = resolveTimetableFaculty(allFaculty.rows, slot);
-            if (!fac) throw Object.assign(new Error(`Cannot match faculty "${slot.faculty || ''}" for ${secKey}, ${dayName}, ${pId}. Select a registered faculty account before publishing.`), {status:400});
+            if (!fac) {
+              unmatchedFacultySlots.push(`${dayName}, ${pId} (${slot.subject || 'unnamed subject'}${slot.faculty ? `, faculty: ${slot.faculty}` : ', faculty not assigned'})`);
+              continue;
+            }
 
             const rawRoom = slot.room || tData.classroom || 'Room 301';
             const cleanRoomCode = rawRoom.replace(/room\s*/i, '').trim() || '301';
@@ -296,6 +300,10 @@ timetableRouter.post('/publish-grid', allowRoles('academic_coordinator','admin')
           }
         }
       }
+    }
+
+    if (unmatchedFacultySlots.length) {
+      throw Object.assign(new Error(`Timetable was not published. Assign a registered faculty account to: ${unmatchedFacultySlots.join('; ')}.`), {status:400});
     }
 
     if (publish && affectedSectionIds.length > 0) {

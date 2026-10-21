@@ -3,7 +3,7 @@ import {z} from 'zod';
 export const MODEL='mobilefacenet-v1';
 export const embeddingSchema=z.array(z.number().finite().min(-100).max(100)).length(192).refine(v=>v.some(x=>x!==0),'Embedding must be nonzero');
 export const deviceSchema=z.string().min(16).max(160).regex(/^[A-Za-z0-9_-]+$/);
-export const submissionSchema=z.object({student_id:z.string().uuid(),device_id:deviceSchema,challenge_id:z.string().uuid(),challenge_type:z.literal('blink'),liveness_result:z.literal(true),embedding_model:z.literal(MODEL),embedding:embeddingSchema,ble_token:z.string().regex(/^[a-f0-9]{24}$/).optional(),timestamp:z.string().datetime(),integrity_token:z.string().min(1).max(20000)}).strict();
+export const submissionSchema=z.object({student_id:z.string().uuid(),device_id:deviceSchema,challenge_id:z.string().uuid(),challenge_type:z.literal('blink'),liveness_result:z.literal(true),embedding_model:z.literal(MODEL),embedding:embeddingSchema,ble_token:z.string().regex(/^[a-f0-9]{24}$/),timestamp:z.string().datetime(),integrity_token:z.string().min(1).max(20000)}).strict();
 export function cosineSimilarity(a,b){
  if(!embeddingSchema.safeParse(a).success||!embeddingSchema.safeParse(b).success)throw new Error('Invalid MobileFaceNet template');
  let dot=0,aa=0,bb=0;for(let i=0;i<a.length;i++){dot+=a[i]*b[i];aa+=a[i]*a[i];bb+=b[i]*b[i];}
