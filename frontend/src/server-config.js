@@ -1,7 +1,7 @@
 export const isNativeApp = () => Boolean(globalThis.Capacitor?.isNativePlatform?.());
 // Keep native installs connected to the hosted campus API on first launch.
 // The editable connection setting remains available if the college moves hosts.
-const NATIVE_API_DEFAULT = 'https://gvpcew-jaitr-ya.onrender.com/api';
+const NATIVE_API_DEFAULT = 'https://gvpcew-app-backend.onrender.com/api';
 export function normalizeServerUrl(value) {
  const url = new URL(value.trim());
  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw Error('Enter the campus server address, for example https://portal.example.edu/api.');
