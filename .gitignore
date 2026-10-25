@@ -29,3 +29,6 @@ android/app/build/
 
 output/*.apk
 
+
+output/
+
