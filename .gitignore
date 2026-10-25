@@ -21,3 +21,11 @@ tools/__pycache__/
 *.keystore
 mobile/attendance/android/app/google-services.json
 **/service-account*.json
+
+# Android APK output
+output/*.apk
+android/app/build/
+
+
+output/*.apk
+
