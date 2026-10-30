@@ -8,7 +8,7 @@ import {acceptsPush,attendanceMilliseconds,anchorAttendance} from './attendanceP
 import {monotonicNow} from './bleProtocol';
 import type {AttendanceSession,AttendanceStatus,Session,StartPeriod,BroadcastStatus,AttendanceRecord,AttendanceCurrent,SubjectStartOptions,SubjectStartSlot} from './types';
 const explain=(e: unknown)=>e instanceof Error?e.message:'Unable to reach campus attendance.';
-export default function AttendanceHome({session,deviceId,notificationsAllowed,onExpired,startRequest=0,startDurationSeconds=60}: {session: Session; deviceId: string; notificationsAllowed: boolean; onExpired: ()=>void; startRequest?:number; startDurationSeconds?:number}) {
+export default function AttendanceHome({session,deviceId,notificationsAllowed,onExpired,startRequest=0,startDurationSeconds=60,startSelection}: {session: Session; deviceId: string; notificationsAllowed: boolean; onExpired: ()=>void; startRequest?:number; startDurationSeconds?:number; startSelection?:{subjectId:string;period:number}|null}) {
   const coordinator=session.user.roles.includes('student_coordinator');
   const [active,setActive]=useState<AttendanceSession|null>(null),[counts,setCounts]=useState<AttendanceStatus|null>(null),[periods,setPeriods]=useState<StartPeriod[]>([]),[subjectOptions,setSubjectOptions]=useState<SubjectStartOptions|null>(null);
   const [error,setError]=useState(''),[pushError,setPushError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[now,setNow]=useState(Date.now());
@@ -78,17 +78,23 @@ export default function AttendanceHome({session,deviceId,notificationsAllowed,on
   }
   function startSelectedSubject(){
     if(!chosenSubject||!selectedSlot||!subjectOptions)return;
-    void start({timetable_id:selectedSlot.id,section_id:subjectOptions.section.id,section_name:subjectOptions.section.section_name,subject_name:chosenSubject.name,start_time:selectedSlot.start_time,end_time:selectedSlot.end_time,session_id:null,expires_at:null,subject_id:selectedSlot.subject_id,period:selectedSlot.period,...(selectedBatchId?{batch_id:selectedBatchId}:{})});
+    void start({timetable_id:selectedSlot.id,default_period:selectedSlot.manual_period,section_id:subjectOptions.section.id,section_name:subjectOptions.section.section_name,subject_name:chosenSubject.name,start_time:selectedSlot.start_time,end_time:selectedSlot.end_time,session_id:null,expires_at:null,subject_id:selectedSlot.subject_id,period:selectedSlot.period,...(selectedBatchId?{batch_id:selectedBatchId}:{})});
   }
   useEffect(()=>{
     if(startRequest<=0||startRequest<=handledStartRequest.current||loading)return;
     handledStartRequest.current=startRequest;
     if(!coordinator)return;
     if(active&&(windowPhase==='ble'||windowPhase==='fallback')){setError('Attendance is already open or in its late check-in window.');return;}
+    if(startSelection){
+      const subject=subjectOptions?.subjects.find(item=>item.subject_id===startSelection.subjectId),slot=subjectOptions?.slots.find(item=>item.subject_id===startSelection.subjectId&&item.period===startSelection.period);
+      if(!subject||!slot||!subjectOptions){setError('The selected subject or period is no longer available. Refresh and choose it again.');return;}
+      void start({timetable_id:slot.id,default_period:slot.manual_period,section_id:subjectOptions.section.id,section_name:subjectOptions.section.section_name,subject_name:subject.name,start_time:slot.start_time,end_time:slot.end_time,session_id:null,expires_at:null,subject_id:slot.subject_id,period:slot.period});
+      return;
+    }
     const assignedClass=periods.find(period=>period.default_attendance);
     if(!assignedClass){setError('Your assigned class is unavailable. Refresh or contact your administrator.');return;}
     void start(assignedClass,startDurationSeconds);
-  },[startRequest,startDurationSeconds,loading,coordinator,active?.id,windowPhase,periods,start]);
+  },[startRequest,startDurationSeconds,startSelection,subjectOptions,loading,coordinator,active?.id,windowPhase,periods,start]);
   const remaining=active?Math.ceil(attendanceMilliseconds(active)/1000):0;
   const marked=verification.phase==='success'?verification.record:ownRecord;
   const accepted=marked?.status==='PRESENT'||marked?.status==='LATE';
@@ -124,8 +130,9 @@ export default function AttendanceHome({session,deviceId,notificationsAllowed,on
         {availableSubjects.length===0&&<Text style={styles.body}>No mapped subjects have a published period in today’s timetable.</Text>}
         <View style={styles.choiceRow}>{availableSubjects.map(item=><Pressable key={item.subject_id} accessibilityRole="button" accessibilityLabel={'Select subject '+item.name} accessibilityState={{selected:selectedSubjectId===item.subject_id}} onPress={()=>{setSelectedSubjectId(item.subject_id);setSelectedSlot(null);setSelectedBatchId('');}} style={[styles.choice,selectedSubjectId===item.subject_id&&styles.choiceSelected]}><Text style={[styles.choiceText,selectedSubjectId===item.subject_id&&styles.choiceTextSelected]}>{item.name}</Text></Pressable>)}</View>
         {!!chosenSubject&&<>
-          <Text style={styles.subject}>Timetable period</Text>
-          <View style={styles.choiceRow}>{subjectSlots.map(slot=><Pressable key={slot.id} accessibilityRole="button" accessibilityLabel={'Select period '+slot.period} accessibilityState={{selected:selectedSlot?.id===slot.id}} onPress={()=>setSelectedSlot(slot)} style={[styles.choice,selectedSlot?.id===slot.id&&styles.choiceSelected]}><Text style={[styles.choiceText,selectedSlot?.id===slot.id&&styles.choiceTextSelected]}>Period {slot.period} · {slot.start_time.slice(0,5)}–{slot.end_time.slice(0,5)}</Text></Pressable>)}</View>
+          {!!chosenSubject.faculty_name&&<Text style={styles.body}>Faculty: {chosenSubject.faculty_name}</Text>}
+          <Text style={styles.subject}>Period</Text>
+          <View style={styles.choiceRow}>{subjectSlots.map(slot=><Pressable key={slot.id} accessibilityRole="button" accessibilityLabel={'Select period '+slot.period} accessibilityState={{selected:selectedSlot?.id===slot.id}} onPress={()=>setSelectedSlot(slot)} style={[styles.choice,selectedSlot?.id===slot.id&&styles.choiceSelected]}><Text style={[styles.choiceText,selectedSlot?.id===slot.id&&styles.choiceTextSelected]}>Period {slot.period}</Text></Pressable>)}</View>
           {chosenSubject.kind==='lab'&&!!subjectOptions.batches.length&&<><Text style={styles.subject}>Lab batch</Text><View style={styles.choiceRow}>{subjectOptions.batches.map(batch=><Pressable key={batch.id} accessibilityRole="button" accessibilityState={{selected:selectedBatchId===batch.id}} onPress={()=>setSelectedBatchId(batch.id)} style={[styles.choice,selectedBatchId===batch.id&&styles.choiceSelected]}><Text style={[styles.choiceText,selectedBatchId===batch.id&&styles.choiceTextSelected]}>{batch.name} · {batch.student_count}</Text></Pressable>)}</View></>}
           <Text style={styles.body}>Students receive a session alert, catch the rotating room Bluetooth signal, and complete blink and face verification. The server checks the selected subject, period, roster, device, and session window.</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Start subject attendance session" accessibilityState={{disabled:busy||!durationValid||!selectedSlot||(chosenSubject.kind==='lab'&&subjectOptions.batches.length>0&&!selectedBatchId)}} disabled={busy||!durationValid||!selectedSlot||(chosenSubject.kind==='lab'&&subjectOptions.batches.length>0&&!selectedBatchId)} onPress={startSelectedSubject} style={[styles.button,(busy||!selectedSlot)&&styles.disabled]}><Text style={styles.buttonText}>{busy?'Starting…':'Start session'}</Text></Pressable>

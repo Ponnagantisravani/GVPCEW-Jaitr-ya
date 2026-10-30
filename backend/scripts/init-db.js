@@ -86,6 +86,7 @@ export async function bootstrapDatabase() {
     await runSqlFile(appClient, schemaPath);
     await appClient.query(await fs.readFile(path.resolve(__dirname, '../../database/syllabus.sql'), 'utf8'));
     await appClient.query(await fs.readFile(path.resolve(__dirname, '../../database/production.sql'), 'utf8'));
+    await appClient.query(await fs.readFile(path.resolve(__dirname, '../../database/subject-attendance.sql'), 'utf8'));
     if (process.argv.includes('--seed-demo')) { await runSqlFile(appClient, seedPath); await appClient.query('insert into user_roles(user_id,role) select id,role from users on conflict do nothing'); }
     console.log("Schema and seed loaded successfully");
   } finally {

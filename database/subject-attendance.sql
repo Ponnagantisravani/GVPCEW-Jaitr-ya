@@ -1,8 +1,10 @@
 -- Additive subject/period attendance. Existing attendance and credentials are untouched.
 create table if not exists subject_attendance_subjects (
  subject_id uuid primary key references subjects(id), dept text not null, year integer not null, semester integer not null,
- kind text not null check(kind in ('theory','lab')), faculty_email text not null, display_name text not null
+ kind text not null check(kind in ('theory','lab')), faculty_email text not null, display_name text not null,
+ default_for_coordinator boolean not null default false
 );
+alter table subject_attendance_subjects add column if not exists default_for_coordinator boolean not null default false;
 create table if not exists subject_attendance_batches (
  id uuid primary key default gen_random_uuid(), section_id uuid not null references academic_sections(id), name text not null, unique(section_id,name)
 );
@@ -68,4 +70,21 @@ on conflict(subject_id) do update set kind=excluded.kind,faculty_email=excluded.
 insert into section_subjects(academic_section_id,subject_id,subject_type,semester_number)
 select x.id,s.subject_id,s.kind,5 from academic_sections x join departments d on d.id=x.department_id
 cross join subject_attendance_subjects s where x.year_number=3 and x.semester_number=5 and d.name in ('CSE','Computer Science Engineering','Computer Science and Engineering')
+on conflict(academic_section_id,subject_id) do nothing;
+
+-- Give CSE coordinators five fixed theory-subject choices and five manually
+-- selected periods. These mappings are deliberately independent of timetables.
+update subject_attendance_subjects sa
+set default_for_coordinator=true
+from subjects s
+where s.id=sa.subject_id and s.code in ('CSE506','CSE507','CSE501','CSE502','CSE509');
+
+insert into section_subjects(academic_section_id,subject_id,subject_type,semester_number)
+select x.id,sa.subject_id,'theory',x.semester_number
+from academic_sections x
+join departments d on d.id=x.department_id
+cross join subject_attendance_subjects sa
+join subjects s on s.id=sa.subject_id
+where d.name in ('CSE','Computer Science Engineering','Computer Science and Engineering')
+ and sa.default_for_coordinator and s.department_id=x.department_id
 on conflict(academic_section_id,subject_id) do nothing;

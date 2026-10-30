@@ -8,8 +8,8 @@ import {subjectTransaction,coordinatorClass,classSubjects,timetableSlots,prepare
 import {fail,subjectMatches} from '../services/subjectAttendancePolicy.js';
 export const subjectAttendanceRouter=Router();subjectAttendanceRouter.use(requireAuth);
 const coordinators=allowRoles('student_coordinator'),faculty=allowRoles('faculty'),students=allowRoles('student','student_coordinator');
-const uuid=z.string().uuid();const payload=z.object({subjectId:uuid,period:z.number().int().min(1).max(20),batchId:uuid.optional(),durationSeconds:z.number().int().min(30).max(1800).default(600)}).strict();
-subjectAttendanceRouter.get('/subjects',coordinators,async(req,res)=>{const x=await coordinatorClass(pool,req.user.sub);const [subjects,slots,batches]=await Promise.all([classSubjects(pool,x.id),timetableSlots(pool,x.id),pool.query('select b.id,b.name,(select count(*)::int from subject_attendance_batch_members m join students s on s.id=m.student_id and s.academic_section_id=b.section_id join users u on u.id=s.user_id and u.active where m.batch_id=b.id) student_count from subject_attendance_batches b where section_id=$1 order by name',[x.id])]);res.json({section:x,subjects,slots,batches:batches.rows,default_duration_seconds:600,demo:demoEnabled()});});
+const uuid=z.string().uuid();const payload=z.object({subjectId:uuid,period:z.number().int().min(1).max(5),manualPeriod:z.boolean().default(true),batchId:uuid.optional(),durationSeconds:z.number().int().min(30).max(1800).default(600)}).strict();
+subjectAttendanceRouter.get('/subjects',coordinators,async(req,res)=>{const x=await coordinatorClass(pool,req.user.sub);const [allSubjects,batches]=await Promise.all([classSubjects(pool,x.id),pool.query('select b.id,b.name,(select count(*)::int from subject_attendance_batch_members m join students s on s.id=m.student_id and s.academic_section_id=b.section_id join users u on u.id=s.user_id and u.active where m.batch_id=b.id) student_count from subject_attendance_batches b where section_id=$1 order by name',[x.id])]);const subjects=allSubjects.filter(subject=>subject.default_for_coordinator),slots=subjects.flatMap(subject=>Array.from({length:5},(_,i)=>({id:`manual-period-${i+1}`,subject_id:subject.subject_id,code:subject.code,name:subject.name,period:i+1,start_time:`Period ${i+1}`,end_time:`Period ${i+1}`,manual_period:true})));res.json({section:x,subjects,slots,batches:batches.rows,default_duration_seconds:600,demo:demoEnabled()});});
 subjectAttendanceRouter.post('/sessions',coordinators,async(req,res)=>{
  const p=payload.safeParse(req.body);if(!p.success)fail(400,'Choose a subject, a period and a 30–1800 second time limit.');let result;
  if(demoEnabled())result=await subjectTransaction(async c=>{
@@ -25,7 +25,7 @@ subjectAttendanceRouter.post('/sessions',coordinators,async(req,res)=>{
   const t=setup.slots.find(s=>s.period===p.data.period&&subjectMatches(s,setup.subject));
   const s=(await pool.query('select bound_device_id from students where user_id=$1',[req.user.sub])).rows[0];
   if(!s?.bound_device_id)fail(409,'Start from your registered Android phone after face enrollment and Bluetooth notification setup.');
-  result=await startMobileSession({userId:req.user.sub,deviceId:s.bound_device_id,sectionId:x.id,timetableId:t.id,durationSeconds:p.data.durationSeconds,subjectSetup:p.data});
+  result=await startMobileSession({userId:req.user.sub,deviceId:s.bound_device_id,sectionId:x.id,timetableId:`manual-period-${p.data.period}`,manualPeriod:true,durationSeconds:p.data.durationSeconds,subjectSetup:p.data});
   result=(await pool.query('select a.*,s.display_name subject_name,array(select period from subject_attendance_periods where session_id=a.id order by period) periods from subject_attendance_sessions a join subject_attendance_subjects s on s.subject_id=a.subject_id where a.id=$1',[result.subject_session_id])).rows[0];
  }
  res.status(201).json({session:result});

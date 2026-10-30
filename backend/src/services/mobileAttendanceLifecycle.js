@@ -39,13 +39,13 @@ export async function closeExpiredSessions(db=pool,sectionId=null){
 
 // Called by both the mobile route and timetable worker. The advisory lock scopes
 // duplicate protection to one section; unrelated sections proceed independently.
-export async function startMobileSession({userId,deviceId,sectionId,timetableId,defaultAttendance=false,source='coordinator',durationSeconds=60,subjectSetup=null},db=pool){
+export async function startMobileSession({userId,deviceId,sectionId,timetableId,defaultAttendance=false,manualPeriod=false,source='coordinator',durationSeconds=60,subjectSetup=null},db=pool){
  durationSeconds=parseAttendanceDuration(durationSeconds);
  requireMobileStartReady();
  // Release old session row locks before the new roster takes enrollment FK locks.
  await closeExpiredSessions(db,sectionId);
  return attendanceTransaction(async c=>{
-  let setup=subjectSetup?await prepareSubjectSession(c,userId,subjectSetup):null;
+  let setup=subjectSetup?await prepareSubjectSession(c,userId,{...subjectSetup,manualPeriod}):null;
   // Native starts and timetable starts must feed the same subject reports as
   // starts from the coordinator dashboard. Take the subject lock first in all
   // paths so racing dashboard/native starts cannot invert lock order.
@@ -56,7 +56,7 @@ export async function startMobileSession({userId,deviceId,sectionId,timetableId,
     if(!slot)fail(409,'Choose a published period for today.');
     setup=await prepareSubjectSession(c,userId,{subjectId:mapped.subject_id,period:slot.period});
    }
-  if(setup){
+  if(setup&&!manualPeriod){
    const selected=setup.slots.find(p=>p.id===timetableId&&p.subject_id===setup.subject.subject_id&&(!subjectSetup||p.period===subjectSetup.period));
    if(!selected)fail(409,'Choose a period that matches the selected subject in today\'s published timetable.');
   }
@@ -73,6 +73,9 @@ export async function startMobileSession({userId,deviceId,sectionId,timetableId,
    if(!section)fail(403,'Section access required.');
    const subject=(await c.query("insert into subjects(department_id,code,name) values($1,$2,'Default attendance') on conflict(code) do update set name=excluded.name returning id",[section.department_id,'DEFAULT-ATTENDANCE-'+sectionId])).rows[0];
    t={id:'default:'+crypto.randomUUID(),subject_id:subject.id,section_name:section.section_name,classroom_id:null,faculty_id:null};
+  }else if(manualPeriod){
+   if(!setup||source!=='coordinator'||!subjectSetup)fail(400,'Choose one of the configured subject periods.');
+   t={id:`manual-period-${subjectSetup.period}`,subject_id:setup.subject.subject_id,section_name:setup.section.section_name,classroom_id:null,faculty_id:setup.subject.faculty_id};
   }else t=(await c.query("select t.*,x.section_name from timetable t join academic_sections x on x.id=t.academic_section_id where t.id=$1 and t.academic_section_id=$2 and t.status='published' and t.entry_type in ('class','lab') and t.day_of_week=extract(dow from clock_timestamp() at time zone 'Asia/Kolkata') and (clock_timestamp() at time zone 'Asia/Kolkata')::time>=t.start_time and (clock_timestamp() at time zone 'Asia/Kolkata')::time<t.end_time for share of t",[timetableId,sectionId])).rows[0];
   if(!t)fail(409,'Choose the current published timetable period.');
   if((await c.query("select 1 from attendance_sessions where mobile_mode and academic_section_id=$1 and (status='open' or (period=$2 and (starts_at at time zone 'Asia/Kolkata')::date=(clock_timestamp() at time zone 'Asia/Kolkata')::date))",[sectionId,t.id])).rowCount)fail(409,defaultAttendance?'Attendance is already open for your section.':'This period already has a session.');

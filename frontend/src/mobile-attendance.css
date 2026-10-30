@@ -3,7 +3,7 @@
 .mobile-attendance__guidance {padding:16px;border-left:4px solid #2563eb;border-radius:8px;background:#eff6ff;color:#1e3a8a;line-height:1.6;}
 .mobile-attendance__selector {display:grid;gap:8px;max-width:720px;font-weight:600;}
 .mobile-attendance__selector select {width:100%;min-height:44px;}
-.mobile-attendance__stats {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.mobile-attendance__stats {display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
 .mobile-attendance__stats>div {display:grid;gap:8px;padding:18px;border:1px solid #dbeafe;background:#f8fafc;border-radius:12px;}
 .mobile-attendance__stats span {color:#64748b;font-size:14px;}
 .mobile-attendance__stats strong {font-size:26px;color:#0f172a;}

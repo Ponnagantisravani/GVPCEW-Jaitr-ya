@@ -25,7 +25,7 @@ export default function App() {
   const [consent,setConsent]=useState(false);
   const [portalOpen,setPortalOpen]=useState(false);
   const [portalRole,setPortalRole]=useState<string|null>(null);
-  const [attendanceStartRequest,setAttendanceStartRequest]=useState(0),[attendanceStartDuration,setAttendanceStartDuration]=useState(60);
+  const [attendanceStartRequest,setAttendanceStartRequest]=useState(0),[attendanceStartDuration,setAttendanceStartDuration]=useState(60),[attendanceStartSelection,setAttendanceStartSelection]=useState<{subjectId:string;period:number}|null>(null);
   const [permissions,setPermissions]=useState<PermissionState|null>(null);
   const sessionRef=useRef<Session|null>(null),captureRef=useRef<EnrollmentCapture|null>(null),version=useRef(0);
   const releaseCapture=useCallback(()=>{captureRef.current?.embedding.fill(0);captureRef.current=null;},[]);
@@ -134,8 +134,8 @@ export default function App() {
         {permissionNotice}<Action title="Refresh status" secondary disabled={busy} onPress={()=>void refresh(session,true)} />
         {permissions && (permissions.missing.length>0||!permissions.notificationsAllowed) && <Action title="Open permission settings" secondary onPress={()=>void Linking.openSettings()} />}
       </View>}
-      {session.user.roles.some(studentRole) && screen==='ready' && <AttendanceHome session={session} deviceId={deviceId} notificationsAllowed={permissions?.notificationsAllowed ?? false} onExpired={expireAttendance} startRequest={attendanceStartRequest} startDurationSeconds={attendanceStartDuration} />}
-      {portalOpen&&(portalRole||dashboardRole)&&(!session.user.roles.some(studentRole)||screen==='ready')&&<NativePortal session={session} role={portalRole||dashboardRole||''} onClose={()=>{setPortalOpen(false);setPortalRole(null);}} onAttendance={durationSeconds=>{setPortalOpen(false);setPortalRole(null);if(screen==='ready'&&attendanceRole(session.user.roles)==='student_coordinator'){const seconds=Number(durationSeconds);setAttendanceStartDuration(Number.isInteger(seconds)&&seconds>=30&&seconds<=1800?seconds:60);setAttendanceStartRequest(value=>value+1);}else if(attendanceRole(session.user.roles)==='student_coordinator')setError('Complete approved face enrollment before starting attendance.');}} onExpired={expireAttendance}/>}
+      {session.user.roles.some(studentRole) && screen==='ready' && <AttendanceHome session={session} deviceId={deviceId} notificationsAllowed={permissions?.notificationsAllowed ?? false} onExpired={expireAttendance} startRequest={attendanceStartRequest} startDurationSeconds={attendanceStartDuration} startSelection={attendanceStartSelection} />}
+      {portalOpen&&(portalRole||dashboardRole)&&(!session.user.roles.some(studentRole)||screen==='ready')&&<NativePortal session={session} role={portalRole||dashboardRole||''} onClose={()=>{setPortalOpen(false);setPortalRole(null);}} onAttendance={request=>{setPortalOpen(false);setPortalRole(null);if(screen==='ready'&&attendanceRole(session.user.roles)==='student_coordinator'){const seconds=Number(request?.durationSeconds);setAttendanceStartDuration(Number.isInteger(seconds)&&seconds>=30&&seconds<=1800?seconds:60);setAttendanceStartSelection(request?.subjectId&&request.period?{subjectId:request.subjectId,period:request.period}:null);setAttendanceStartRequest(value=>value+1);}else if(attendanceRole(session.user.roles)==='student_coordinator')setError('Complete approved face enrollment before starting attendance.');}} onExpired={expireAttendance}/>}
       <Action title="Sign out" secondary disabled={busy} onPress={()=>void signOut()} />
     </>}
     {!!error && <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorText}>{error}</Text></View>}

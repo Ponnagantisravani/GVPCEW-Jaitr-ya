@@ -5,9 +5,9 @@ export type EnrollmentCapture = {embedding_model: 'mobilefacenet-v1'; model_sha2
 export type PermissionState = {missing: string[]; notificationsAllowed: boolean};
 
 export type AttendanceSession = {id: string; section_id: string; period: string; started_at: string; expires_at: string; status: 'open' | 'closed'; broadcast?: boolean; late_expires_at?: string; monotonic_expires_at?: number; monotonic_late_expires_at?: number};
-export type StartPeriod = {default_attendance?: boolean; year_number?: number; department_name?: string; timetable_id: string; section_id: string; section_name: string; subject_name: string; start_time: string; end_time: string; session_id: string | null; expires_at: string | null; subject_id?:string; period?:number; subject_kind?:'theory'|'lab'; batch_id?:string};
+export type StartPeriod = {default_attendance?: boolean; default_period?: boolean; year_number?: number; department_name?: string; timetable_id: string; section_id: string; section_name: string; subject_name: string; start_time: string; end_time: string; session_id: string | null; expires_at: string | null; subject_id?:string; period?:number; subject_kind?:'theory'|'lab'; batch_id?:string};
 export type SubjectStartOption={subject_id:string;name:string;kind:'theory'|'lab';faculty_name?:string;period_count?:number};
-export type SubjectStartSlot={id:string;subject_id:string;code:string;name:string;period:number;start_time:string;end_time:string};
+export type SubjectStartSlot={id:string;subject_id:string;code:string;name:string;period:number;start_time:string;end_time:string;manual_period?:boolean};
 export type SubjectStartBatch={id:string;name:string;student_count:number};
 export type SubjectStartOptions={section:{id:string;section_name:string;year_number:number};subjects:SubjectStartOption[];slots:SubjectStartSlot[];batches:SubjectStartBatch[];demo:boolean};
 export type AttendanceStatus = {id: string; status: 'open' | 'closed'; expires_at: string; total: number; present: number; late: number; present_students?: {student_id:string;roll_number:string;full_name:string;status:'PRESENT'|'LATE'}[]};
