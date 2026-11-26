@@ -1,0 +1,578 @@
+{
+  "24CT11RC24": {
+    "title": "Computer Networks Lab",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24CS11RC01": {
+    "title": "Compiler Design",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24CS11MC01": {
+    "title": "Design Thinking Innovation and Entrepreneurship",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24CT11RC19": {
+    "title": "Data Warehousing and Data Mining",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24CI11RC01": {
+    "title": "Data Mining Lab",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24EC11SC02": {
+    "title": "Skill Course III IoT Applications",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24CT11RC22": {
+    "title": "Computer Networks",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24CT11SC01": {
+    "title": "Skill Course III Continuous Integration and Continuous Delivery using DevOps",
+    "year": 3,
+    "semester": 5,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_I_Semester"
+  },
+  "24CI11SC01": {
+    "title": "Skill Course V Deep Learning Essentials With Python",
+    "year": 4,
+    "semester": 7,
+    "type": "theory",
+    "elective": false,
+    "folder": "IV_Year_I_Semester"
+  },
+  "24CS11SC03": {
+    "title": "Skill Course V Big Data Analytics with PySpark",
+    "year": 4,
+    "semester": 7,
+    "type": "theory",
+    "elective": false,
+    "folder": "IV_Year_I_Semester"
+  },
+  "24BC11RC01": {
+    "title": "Green Chemistry",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24CT11RC01": {
+    "title": "Fundamentals of Computers",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24HE11RC01": {
+    "title": "English",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24HE11RC02": {
+    "title": "Communication Skills Lab",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24BM11RC01": {
+    "title": "Calculus and Differential Equations",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24CT11RC02": {
+    "title": "Problem Solving using C",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24CT11RC03": {
+    "title": "Computer Engineering Workshop",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24CT11RC04": {
+    "title": "Problem Solving using C Lab",
+    "year": 1,
+    "semester": 1,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_I_Semester"
+  },
+  "24CI11PE03": {
+    "title": "Distributed Systems",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CT11PE05": {
+    "title": "Soft Computing",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CT11PE02": {
+    "title": "Ethical Hacking",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CT11PE03": {
+    "title": "Generative AI Models",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CS11PE02": {
+    "title": "Human Computer Interaction",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CI11PE02": {
+    "title": "Deep Learning",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CI11PE04": {
+    "title": "Hadoop and Big Data Analytics",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CS11PE03": {
+    "title": "Java Spring Framework",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CA11PE02": {
+    "title": "Cybersecurity and Digital Forensics",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CT11PE04": {
+    "title": "Mobile Application Development",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CS11PE01": {
+    "title": "Artificial Intelligence Techniques",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CT11PE01": {
+    "title": "API and Micro Services",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CI11PE01": {
+    "title": "Blockchain Technologies",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CA11PE03": {
+    "title": "Fog and Edge Computing",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CA11PE01": {
+    "title": "Computer Vision",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24CA11PE04": {
+    "title": "NoSQL Databases",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Professional_Electives"
+  },
+  "24HM11MC01": {
+    "title": "Professional Ethics and Human Values",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24CT11RC12": {
+    "title": "Database Management Systems",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24CT11RC20": {
+    "title": "Formal Languages and Automata Theory",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24BM11RC06": {
+    "title": "Probability and Statistics",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24HM11RC01": {
+    "title": "Managerial Economics",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24CT11RC18": {
+    "title": "Design and Analysis of Algorithms",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24CT11RC21": {
+    "title": "Algorithms Lab Through C",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24CT11RC16": {
+    "title": "Database Management Systems Lab",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24CT11SC02": {
+    "title": "Skill Course II MERN Stack Development",
+    "year": 2,
+    "semester": 4,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_II_Semester"
+  },
+  "24BC11MC01": {
+    "title": "Environment Science",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CT11RC10": {
+    "title": "Object Oriented Programming Through Java",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24BM11RC05": {
+    "title": "Discrete Mathematical Structures",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CT11RC13": {
+    "title": "Operating Systems",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CT11RC15": {
+    "title": "Object Oriented Programming Through Java Lab",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CT11RC09": {
+    "title": "Data Structures",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CS11SC01": {
+    "title": "Skill Course 1 Advanced Python Programming",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CT11RC11": {
+    "title": "Computer Organization",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CT11RC14": {
+    "title": "Data Structures Lab",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24CT11RC17": {
+    "title": "Operating Systems Lab",
+    "year": 2,
+    "semester": 3,
+    "type": "theory",
+    "elective": false,
+    "folder": "II_Year_I_Semester"
+  },
+  "24BM11RC02": {
+    "title": "Linear Algebra and Vector Calculus",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24CT11RC06": {
+    "title": "Python Programming",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24CT11RC08": {
+    "title": "Web Technologies Fundamentals Lab",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24EC11RC05": {
+    "title": "Digital Logic Design",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24EC11RC04": {
+    "title": "Elements of Electronics Engineering",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24CT11RC07": {
+    "title": "Python Programming Lab",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24BP11RC02": {
+    "title": "Engineering Physics Lab",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24BP11RC01": {
+    "title": "Engineering Physics",
+    "year": 1,
+    "semester": 2,
+    "type": "theory",
+    "elective": false,
+    "folder": "I_Year_II_Semester"
+  },
+  "24CS11EL03": {
+    "title": "Software Project Management",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Open_Electives"
+  },
+  "24CS11EL02": {
+    "title": "Introduction to Artificial Intelligence",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Open_Electives"
+  },
+  "24CS11EL01": {
+    "title": "Human Machine Interaction",
+    "year": 4,
+    "semester": 7,
+    "type": "elective",
+    "elective": true,
+    "folder": "Open_Electives"
+  },
+  "24CI11RC04": {
+    "title": "Cryptography and Network Security Lab",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  },
+  "24CT11RC25": {
+    "title": "Machine Learning Lab",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  },
+  "24HE11SC01": {
+    "title": "Skill Course IV Soft Skills",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  },
+  "24CI11RC02": {
+    "title": "Cryptography and Network Security",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  },
+  "24CT11RC23": {
+    "title": "Machine Learning",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  },
+  "24HM11MC02": {
+    "title": "IPR Patents",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  },
+  "24CI11RC05": {
+    "title": "Object Oriented Software Engineering Lab",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  },
+  "24CI11RC03": {
+    "title": "Object Oriented Software Engineering",
+    "year": 3,
+    "semester": 6,
+    "type": "theory",
+    "elective": false,
+    "folder": "III_Year_II_Semester"
+  }
+}

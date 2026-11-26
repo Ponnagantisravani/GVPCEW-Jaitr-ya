@@ -1,6 +1,6 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {ActivityIndicator,AppState,Linking,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
-import {ApiError,getCurrentAttendance,getAttendanceStatus,getStartOptions,getSubjectStartOptions,registerFcm,startAttendance} from './api';
+import {ApiError,getCurrentAttendance,getTappedAttendance,getAttendanceStatus,getStartOptions,getSubjectStartOptions,registerFcm,startAttendance} from './api';
 import {useBleProximity} from './useBleProximity';
 import {useFaceAttendance} from './useFaceAttendance';
 import {campusPush,campusBle} from './native';
@@ -21,7 +21,7 @@ export default function AttendanceHome({session,deviceId,notificationsAllowed,on
   const proximity=useBleProximity(session,windowPhase==='ble'?active:null,deviceId,onExpired);
   const verification=useFaceAttendance(session,active,deviceId,proximity.receipt,onExpired,windowPhase==='ble'?'ble':'closed',proximity.cameraUnlocked);
   const [broadcast,setBroadcast]=useState<BroadcastStatus|null>(null);
-  const mounted=useRef(true),refreshing=useRef(false),registered=useRef(''),lastEvent=useRef(''),handledStartRequest=useRef(0);
+  const mounted=useRef(true),refreshing=useRef(false),registered=useRef(''),lastEvent=useRef(''),openedEvent=useRef<import('./types').PushEvent|null>(null),handledStartRequest=useRef(0);
   const refresh=useCallback(async()=>{
     if(refreshing.current||AppState.currentState!=='active')return;
     refreshing.current=true;
@@ -30,10 +30,13 @@ export default function AttendanceHome({session,deviceId,notificationsAllowed,on
         const [options,catalog]=await Promise.all([getStartOptions(session),getSubjectStartOptions(session)]);
         if(mounted.current){setPeriods(options.default_option?[options.default_option]:options.periods);setSubjectOptions(catalog);if(!catalog.subjects.some(s=>s.subject_id===selectedSubjectId&&catalog.slots.some(slot=>slot.subject_id===s.subject_id))){setSelectedSubjectId(catalog.subjects.find(s=>catalog.slots.some(slot=>slot.subject_id===s.subject_id))?.subject_id||'');setSelectedSlot(null);setSelectedBatchId('');}}
       }
+      const opened=await campusPush.event().catch(()=>null);
+      if(opened&&acceptsPush(opened,session.user.id)&&opened.opened==='true')openedEvent.current=opened;
+      const tapped=openedEvent.current;
       const requested=monotonicNow();
-      const result=await getCurrentAttendance(session,deviceId);
-      const current=anchorAttendance(result,requested);
-      const status=result.session?await getAttendanceStatus(session,result.session.id):null;
+      const result=tapped&&acceptsPush(tapped,session.user.id)?await getTappedAttendance(session,tapped.session_id,deviceId):await getCurrentAttendance(session,deviceId);
+      let current=anchorAttendance(result,requested);
+      const status=current?await getAttendanceStatus(session,current.id):null;
       if(mounted.current){setActive(current);setWindowPhase(result.phase);setOwnRecord(result.own_record);setCounts(status);setError('');}
     }catch(e){if(mounted.current){if(e instanceof ApiError&&e.status===401)onExpired();else setError(explain(e));}}
     finally{refreshing.current=false;if(mounted.current)setLoading(false);}
@@ -108,6 +111,8 @@ export default function AttendanceHome({session,deviceId,notificationsAllowed,on
     {!!pushError&&<Text accessibilityRole="alert" style={styles.notice}>{pushError} Use Refresh to retry notification registration.</Text>}
     {!notificationsAllowed&&<Text style={styles.notice}>Enable notifications in app settings to receive attendance alerts.</Text>}
     {active?<>
+      <Text style={styles.subject}>YOUR SECTION · {active.section_name}</Text>
+      <Text style={styles.subject}>{active.subject_name || 'Class attendance'}</Text>
       <Text style={styles.timer}>{windowPhase==='ble'&&remaining>0?remaining+'s remaining':'Session closed'}</Text>
       <Text style={styles.body}>{counts?counts.present+' present · '+counts.late+' late / '+counts.total+' students':'Refreshing attendance results…'}</Text>
       {accepted&&<View accessibilityRole="alert" style={styles.successScreen}><Text style={styles.successMark}>✓</Text><Text style={styles.successTitle}>{marked?.status==='LATE'?'Attendance marked (Late)':'Attendance marked'}</Text></View>}

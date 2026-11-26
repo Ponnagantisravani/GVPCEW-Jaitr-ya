@@ -30,7 +30,7 @@ class CampusMessagingService : FirebaseMessagingService() {
             val tap=PendingIntent.getActivity(this,id,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             val remaining=java.time.Instant.parse(data.getValue("expires_at")).toEpochMilli()-System.currentTimeMillis()
             val notification=NotificationCompat.Builder(this,"attendance").setSmallIcon(R.drawable.ic_attendance_notification)
-                .setContentTitle("Attendance is open").setContentText("Tap to open your class attendance.")
+                .setContentTitle("Attendance is open").setContentText("Tap to open Attendance for your section.")
                 .setPriority(NotificationCompat.PRIORITY_HIGH).setContentIntent(tap).setAutoCancel(true).setTimeoutAfter(remaining.coerceAtLeast(1)).build()
             NotificationManagerCompat.from(this).notify(id,notification)
             // Push never opens the camera; server authorizes the broadcaster token request.

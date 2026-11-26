@@ -2,7 +2,7 @@ import React, {useEffect,useState} from 'react';
 import {api} from './api.js';
 import {inCampusApp,openNativeAttendance} from './native-campus.js';
 import './portal-components.css';
-export const errorMessage=e=>e.response?.data?.message||'Could not complete the request. Please retry.';
+export const errorMessage=e=>e.response?.data?.message||(e.code==='ECONNABORTED'?'The request is taking longer than expected. Check whether it completed before uploading again.':e.code==='ERR_NETWORK'||!e.response?'Cannot reach the campus server. Check the connection and retry.':'Could not complete the request. Please retry.');
 export function DataTable({columns,rows}){return <div className="portal-table mobile-records"><table><thead><tr>{columns.map((c,i)=><th key={i}>{c}</th>)}</tr></thead><tbody>{rows.length?rows.map((r,i)=><tr key={i}>{r.map((v,j)=><td key={j} data-label={columns[j]}>{v??'—'}</td>)}</tr>):<tr><td colSpan={columns.length}>No records available.</td></tr>}</tbody></table></div>;}
 export function NotificationCenter(){
  const [rows,setRows]=useState([]),[error,setError]=useState(''),[form,setForm]=useState({title:'',body:'',scheduledFor:''}),[busy,setBusy]=useState(false);

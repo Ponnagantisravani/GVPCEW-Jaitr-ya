@@ -6,8 +6,9 @@ import { requireAuth, allowRoles } from '../middleware/auth.js';
 import {managementScope,manageDepartmentScope,sectionScope,teachingScope,subjectScope,noticeScope} from '../services/portalScope.js';
 
 export const portalRouter = Router();
-const portalRoles = ['admin', 'faculty', 'academic_coordinator', 'student', 'student_coordinator'];
+const portalRoles = ['admin', 'faculty', 'academic_coordinator', 'hod', 'student', 'student_coordinator'];
 const manageableRoles = ['student', 'student_coordinator', 'faculty', 'academic_coordinator'];
+const manageableListingRoles = [...manageableRoles, 'hod'];
 
 // Faculty workspaces are keyed by `faculty.id`, not just the role mapping. Keep
 // the profile in place whenever an administrator grants faculty access.
@@ -85,11 +86,16 @@ portalRouter.patch('/users/:id/roles', requireAuth, allowRoles('admin'), async (
     if (requestedRoles.includes('faculty')) await ensureFacultyProfile(client, req.params.id);
 
     if(!requestedRoles.includes('academic_coordinator')){await client.query('delete from academic_coordinator_departments where user_id=$1',[req.params.id]);await client.query('delete from academic_institution_access where user_id=$1',[req.params.id]);}
+    if(!requestedRoles.includes('hod'))await client.query('delete from hod_departments where user_id=$1',[req.params.id]);
     if(!requestedRoles.includes('student_coordinator'))await client.query('delete from student_coordinator_sections where user_id=$1',[req.params.id]);
     const primaryRole = requestedRoles.includes('admin')
       ? 'admin'
       : requestedRoles.includes('faculty')
       ? 'faculty'
+      : requestedRoles.includes('hod') || requestedRoles.includes('academic_coordinator')
+      ? 'academic_coordinator'
+      : requestedRoles.includes('student_coordinator')
+      ? 'student_coordinator'
       : 'student';
 
     const { rows } = await client.query(
@@ -122,7 +128,7 @@ async function resolveStudentDepartment(client, name) {
 
 portalRouter.get('/admin/people', requireAuth, allowRoles('admin'), async (req, res) => {
   const role = String(req.query.role || '');
-  if (!manageableRoles.includes(role)) return res.status(400).json({ message: 'Choose a valid management section.' });
+  if (!manageableListingRoles.includes(role)) return res.status(400).json({ message: 'Choose a valid management section.' });
   const { rows } = await pool.query(
     `select u.id,u.full_name,u.email,u.created_at,s.roll_number,s.section,case when $1='faculty' then fd.name else d.name end department,f.employee_code
      from users u

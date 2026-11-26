@@ -227,10 +227,10 @@ function SyllabusFullscreenViewer({ syllabus, onClose, editor, busy, onPublish, 
 }
 
 export function SyllabusManagement({ role }) {
-  const editor = ['academic_coordinator', 'admin'].includes(role);
+  const editor = ['academic_coordinator', 'admin', 'hod'].includes(role);
   
   // Tabs: 'repository' | 'upload_split' | 'templates'
-  const [activeTab, setActiveTab] = useState('repository');
+  const [activeTab, setActiveTab] = useState(role === 'faculty' ? 'upload_split' : 'repository');
   
   const [sectionIds, setSectionIds] = useState([]);
   const [records, setRecords] = useState([]);
@@ -249,6 +249,10 @@ export function SyllabusManagement({ role }) {
   const [downloadingId, setDownloadingId] = useState(null);
   const [form, setForm] = useState(blankForm);
   const [file, setFile] = useState(null);
+  const [facultyUploadFile, setFacultyUploadFile] = useState(null);
+  const [facultyUploadSubject, setFacultyUploadSubject] = useState('');
+  const [facultyUploadSplit, setFacultyUploadSplit] = useState([]);
+  const [facultyUploadBusy, setFacultyUploadBusy] = useState(false);
 
   async function downloadSyllabusPdf(syllabus, e) {
     if (e) e.stopPropagation();
@@ -337,6 +341,39 @@ export function SyllabusManagement({ role }) {
       setError(e.response?.data?.message || 'Could not connect to the syllabus service. Check the server connection and retry.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function uploadFacultySyllabus() {
+    if (!facultyUploadFile || facultyUploadFile.size > 25 * 1024 * 1024) {
+      setError('Choose a PDF syllabus no larger than 25 MB.');
+      return;
+    }
+    setFacultyUploadBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const pdf = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => resolve(String(reader.result).split(',')[1]);
+        reader.readAsDataURL(facultyUploadFile);
+      });
+      const { data } = await api.post('/syllabi/faculty-upload', {
+        subjectId: facultyUploadSubject,
+        file_name: facultyUploadFile.name,
+        pdf
+      });
+      setFacultyUploadSplit(data.split || []);
+      setNotice(data.split?.length > 1
+        ? `Syllabus uploaded and split into ${data.split.length} course sections. It is available for HOD review.`
+        : 'Syllabus uploaded. It is available for HOD review.');
+      setFacultyUploadFile(null);
+      await refresh();
+    } catch (e) {
+      setError(e.response?.data?.message || 'Could not upload and split the syllabus.');
+    } finally {
+      setFacultyUploadBusy(false);
     }
   }
 
@@ -927,6 +964,26 @@ export function SyllabusManagement({ role }) {
           onCancel={() => setEditing(null)}
           busy={busy}
         />
+      ) : role === 'faculty' ? (
+        <div className="syllabus-upload-workflow-panel">
+          <div className="syllabus-panel-top-title">
+            <div><span className="syllabus-step-pill">FACULTY SYLLABUS SUBMISSION</span><h3>Upload and split a course syllabus</h3><p className="syllabus-panel-desc">Upload the syllabus for one of your assigned subjects. Detected course sections are split automatically and sent to your HOD for review.</p></div>
+          </div>
+          {loading ? <p>Loading your assigned subjects…</p> : (
+            <div className="syllabus-unified-upload-form">
+              <label>Assigned subject<select value={facultyUploadSubject} onChange={e => setFacultyUploadSubject(e.target.value)}>
+                <option value="">Choose a subject</option>
+                {metaSubjects.map(subject => <option key={subject.id} value={subject.id}>{subject.code} · {subject.name}</option>)}
+              </select></label>
+              <label>Course or curriculum PDF<input type="file" accept="application/pdf,.pdf" onChange={e => setFacultyUploadFile(e.target.files?.[0] || null)} /></label>
+              <button type="button" className="syllabus-primary-btn" disabled={facultyUploadBusy || !facultyUploadSubject || !facultyUploadFile} onClick={uploadFacultySyllabus}>
+                {facultyUploadBusy ? 'Uploading and splitting…' : 'Upload and split syllabus'}
+              </button>
+            </div>
+          )}
+          {facultyUploadSplit.length > 0 && <div className="syllabus-detected-results"><h4>Detected sections</h4><ul>{facultyUploadSplit.map((item, index) => <li key={`${item.course_code}-${index}`}>{item.course_code} · {item.course_name} (pages {item.start_page}–{item.end_page})</li>)}</ul></div>}
+          <div className="syllabus-repository-view"><h3>Your assigned syllabi</h3>{records.length ? <div className="syllabus-cards-grid">{records.map(row => <article className="syllabus-repo-card" key={row.id}><strong>{row.subject_code ? `${row.subject_code} · ` : ''}{row.title}</strong><p>{row.department} · {row.batch}</p><button type="button" className="syllabus-preview-cta-btn" onClick={() => setFullscreenSyllabus(row)}><Eye size={13} /> View</button>{row.has_pdf && <button type="button" className="syllabus-download-cta-btn" onClick={e => downloadSyllabusPdf(row, e)}><Download size={13} /> PDF</button>}</article>)}</div> : <p>No published syllabi assigned to you yet.</p>}</div>
+        </div>
       ) : activeTab === 'upload_split' && editor ? (
         /* Upload & Course-ID Auto-Split Section */
         <div className="syllabus-upload-workflow-panel">

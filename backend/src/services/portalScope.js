@@ -1,7 +1,7 @@
 import {effectiveFacultyAssignments} from './teachingAssignments.js';
 // $1 is the authenticated user, $2 is a role verified by requireAuth.
 export const managementScope = "($2::text='admin' or ($2='academic_coordinator' and exists(select 1 from academic_institution_access permission where permission.user_id=$1)))";
-export const manageDepartmentScope = department => `(${managementScope} or ($2='academic_coordinator' and exists(select 1 from academic_coordinator_departments permission where permission.user_id=$1 and permission.department_id=${department})))`;
+export const manageDepartmentScope = department => `(${managementScope} or ($2='academic_coordinator' and exists(select 1 from academic_coordinator_departments permission where permission.user_id=$1 and permission.department_id=${department})) or ($2='hod' and exists(select 1 from hod_departments permission where permission.user_id=$1 and permission.department_id=${department})))`;
 export const sectionScope = section => `(($2='student' and exists(select 1 from students owner where owner.user_id=$1 and owner.academic_section_id=${section})) or ($2='student_coordinator' and exists(select 1 from student_coordinator_sections responsibility where responsibility.user_id=$1 and responsibility.academic_section_id=${section})))`;
 export const teachingScope = section => `exists(select 1 from ${effectiveFacultyAssignments} assigned join faculty owner on owner.id=assigned.faculty_id where owner.user_id=$1 and assigned.academic_section_id=${section} and assigned.status='active')`;
 export const subjectScope = alias => `(

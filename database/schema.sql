@@ -19,7 +19,7 @@ create table if not exists users (
 -- legacy/default role for existing data; authorization uses this mapping.
 create table if not exists user_roles (
   user_id uuid not null references users(id) on delete cascade,
-  role text not null check (role in ('admin','faculty','academic_coordinator','student','student_coordinator')),
+  role text not null check (role in ('admin','faculty','academic_coordinator','hod','student','student_coordinator')),
   assigned_at timestamptz not null default now(),
   assigned_by uuid references users(id) on delete set null,
   primary key (user_id, role)

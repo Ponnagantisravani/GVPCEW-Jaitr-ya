@@ -1,6 +1,6 @@
 export const rolePaths = {
   student: '/student.html', student_coordinator: '/student-coordinator.html',
-  faculty: '/faculty.html', academic_coordinator: '/academic-coordinator.html', admin: '/admin.html'
+  faculty: '/faculty.html', academic_coordinator: '/academic-coordinator.html', hod: '/hod.html', admin: '/admin.html'
 };
 
 export function assignedRoles(user) {
@@ -29,7 +29,7 @@ export function preferredRole(user, requested) {
   return roles.includes(requested)?requested:roles.includes(user?.role)?user.role:roles[0];
 }
 export function roleForPath(path) {
-  return Object.keys(rolePaths).find(role=>rolePaths[role]===path) || ({'/student':'student','/faculty':'faculty','/admin':'admin','/student-coordinator':'student_coordinator','/academic-coordinator':'academic_coordinator','/student-dashboard':'student','/faculty-dashboard':'faculty','/admin-dashboard':'admin','/student/coordinator':'student_coordinator','/academic-coordinator/dashboard':'academic_coordinator'})[path];
+  return Object.keys(rolePaths).find(role=>rolePaths[role]===path) || ({'/student':'student','/faculty':'faculty','/admin':'admin','/student-coordinator':'student_coordinator','/academic-coordinator':'academic_coordinator','/hod':'hod','/student-dashboard':'student','/faculty-dashboard':'faculty','/admin-dashboard':'admin','/student/coordinator':'student_coordinator','/academic-coordinator/dashboard':'academic_coordinator'})[path];
 }
 export function accountStorageKey(key) { return key+':'+(readSession()?.user?.id||'signed-out'); }
 

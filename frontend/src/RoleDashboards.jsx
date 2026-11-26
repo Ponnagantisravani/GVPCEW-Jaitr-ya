@@ -11,12 +11,15 @@ import {
   TrendingUp, Users, Check, Printer, QrCode, ClipboardList, BookMarked, Search, ArrowRight, ChevronDown
 } from 'lucide-react';
 import { TimetableManagement } from './TimetableManagement.jsx';
+import { RoomAllotment } from './RoomAllotment.jsx';
+import { RoomsLabs } from './RoomsLabs.jsx';
 import { AcademicCalendarManagement } from './AcademicCalendarManagement.jsx';
 import { SyllabusManagement } from './SyllabusManagement.jsx';
 import { ExamScheduleManagement } from './ExamScheduleManagement.jsx';
 import { DigitalIdCard } from './DigitalIdCard.jsx';
 import { StudentProfileView } from './StudentProfileView.jsx';
 import { FacultyDashboard } from './FacultyDashboard.jsx';
+import {HodWorkspace,FacultyPreferenceWorkspace,CoordinatorAssignmentSubmissions} from './HodWorkspace.jsx';
 import {AccessResponsibilities,CoordinatorWorkspace,MyFaculty} from './AccessWorkspaces.jsx';
 import {sectionLabel} from './PublicationAudience.jsx';
 import logoUrl from '../assets/gvpcew-official-logo.png';
@@ -48,7 +51,7 @@ function getSidebarIcon(item) {
 const menus = {
   admin: ['User Management', 'Responsibilities & Access', 'Academic Management', 'Section Assignment', 'Timetable Monitoring', 'Attendance Monitoring', 'Syllabus', 'Academic Calendar', 'Exam Schedule', 'Notices & Announcements', 'Notifications'],
   faculty: [
-    'My Profile', 'My Subjects', 'My Classes', 'My Timetable', 'Syllabus', 'Academic Calendar', 'Notifications',
+    'My Profile', 'My Subjects', 'Subject Preferences', 'My Classes', 'My Timetable', 'Syllabus', 'Academic Calendar', 'Notifications',
     'Attendance',
     'Mobile Attendance Reports',
     'Assignments',
@@ -61,7 +64,8 @@ const menus = {
     'Academic Reports',
     'Exam Schedule'
   ],
-  academic_coordinator: ['Timetable Management', 'Syllabus', 'Conflict Detection', 'Class & Section Management', 'Academic Calendar', 'Exam Schedule', 'Academic Announcements', 'Academic Reports', 'Mobile Attendance Reports'],
+  academic_coordinator: ['HOD Assignment Sheets', 'Timetable Management', 'Conflict Detection', 'Rooms and Labs', 'Received from HOD', 'Timetable Settings', 'Generate and Review', 'Room Allotment', 'Syllabus', 'Class & Section Management', 'Academic Calendar', 'Exam Schedule', 'Academic Announcements', 'Academic Reports', 'Mobile Attendance Reports'],
+  hod: ['Syllabus Structure', 'Preference Sheets', 'Preferences View', 'Assignments', 'Send to Coordinator', 'Notifications'],
   student: ['Academic Calendar', 'Mark Attendance', 'Syllabus', 'Exam Schedule', 'Digital ID', 'Student Profile', 'Attendance', 'My Timetable', 'My Subjects', 'My Faculty', 'Assignments', 'Internal Marks & Results', 'Leave Requests', 'Notices & Announcements', 'Notifications'],
   student_coordinator: ['Attendance Session', 'Class Timetable', 'Class Students', 'Class Attendance', 'Class Performance', 'Class Assignments', 'Class Announcements', 'Class Information', 'Syllabus', 'Academic Calendar', 'Exam Schedule', 'Notifications', 'Attendance Status']
 };
@@ -70,6 +74,7 @@ const headlines = {
   admin: 'System Control Center',
   faculty: 'Teaching Operations',
   academic_coordinator: 'Academic Operations',
+  hod: 'Department Leadership',
   student: 'Student Portal',
   student_coordinator: 'Classroom Operations'
 };
@@ -78,6 +83,7 @@ const statLabels = {
   admin: ['Total Students', 'Total Faculty', 'Active Sessions', 'Active Notices'],
   faculty: ['Total Subjects', 'Today’s Classes', 'Active Sessions', 'Active Notices'],
   academic_coordinator: ['Total Subjects', 'Total Students', 'Total Faculty', 'Active Notices'],
+  hod: ['Open Preference Sheets', 'Preference Responses', 'Pending Assignments', 'Confirmed Structures'],
   student: ['Attendance', 'Assignments', 'Upcoming Events', 'Notifications'],
   student_coordinator: ['Total Subjects', 'Classes Today', 'Session Status', 'Active Notices']
 };
@@ -144,17 +150,15 @@ function useTimetableAlerts(role, timetable) {
       const key = `${dateKey}:${next.id}:${settings.minutes}`; if (sent[key]) return;
       sent[key] = true; localStorage.setItem(accountStorageKey(timetableAlertSentKey), JSON.stringify(sent));
       const message = `${next.subject || 'Your class'} starts in ${next.remaining} minute${next.remaining === 1 ? '' : 's'}${next.classroom ? ` in ${next.classroom}` : ''}.`;
-      setReminder({ title: 'Upcoming class', message, target: role === 'student_coordinator' ? 'Class Timetable' : 'My Timetable' });
+      setReminder({ title: 'Upcoming class', message, target: role === 'student_coordinator' ? 'Class Timetable' : 'My Timetable', sectionId: next.academic_section_id || next.section_id || null, sectionName: next.section_name || null, subject: next.subject || null, startTime: next.start_time || null, classroom: next.classroom || null });
       if (settings.sound) soundAlarm();
-      if (window.Notification?.permission === 'granted') new window.Notification('GVPCEW class reminder', { body: message });
     };
     check(); const timer = window.setInterval(check, 30000); return () => window.clearInterval(timer);
   }, [role, timetable, settings]);
   return { settings, saveSettings, reminder, dismiss: () => setReminder(null) };
 }
 function TimetableAlertSettings({ alerts }) {
-  const enableBrowserAlerts = async () => { if (window.Notification) await window.Notification.requestPermission(); };
-  return <section className="timetable-alert-settings"><div><h3>Class reminders & alarms</h3><p className="muted">Get an alert before your next timetable class while this portal is open.</p></div><label><input type="checkbox" checked={alerts.settings.enabled} onChange={e=>alerts.saveSettings({enabled:e.target.checked})}/> Enable automatic class reminders</label><label>Alert before<select value={alerts.settings.minutes} onChange={e=>alerts.saveSettings({minutes:Number(e.target.value)})}><option value={5}>5 minutes</option><option value={10}>10 minutes</option><option value={15}>15 minutes</option><option value={30}>30 minutes</option></select></label><label><input type="checkbox" checked={alerts.settings.sound} onChange={e=>alerts.saveSettings({sound:e.target.checked})}/> Play alarm sound</label>{'Notification' in window&&<button type="button" onClick={enableBrowserAlerts}>Enable browser pop-ups</button>}</section>;
+  return <section className="timetable-alert-settings"><div><h3>Class reminders</h3><p className="muted">Show an in-app reminder before your next timetable class while the dashboard is open.</p></div><label><input type="checkbox" checked={alerts.settings.enabled} onChange={e=>alerts.saveSettings({enabled:e.target.checked})}/> Enable automatic class reminders</label><label>Alert before<select value={alerts.settings.minutes} onChange={e=>alerts.saveSettings({minutes:Number(e.target.value)})}><option value={5}>5 minutes</option><option value={10}>10 minutes</option><option value={15}>15 minutes</option><option value={30}>30 minutes</option></select></label><label><input type="checkbox" checked={alerts.settings.sound} onChange={e=>alerts.saveSettings({sound:e.target.checked})}/> Play reminder sound</label></section>;
 }
 
 function buildRoleNotifications(role, data, values) {
@@ -220,7 +224,8 @@ function UserAccessManagement({ users = [], reload }) {
     { value: 'student', title: 'Students', description: 'Students who can sign in to the Student Portal.' },
     { value: 'student_coordinator', title: 'Student Coordinators', description: 'Students approved to manage class coordination tasks.' },
     { value: 'faculty', title: 'Faculty', description: 'Teachers who can sign in to the Faculty Portal.' },
-    { value: 'academic_coordinator', title: 'Academic Coordinators', description: 'Staff approved to manage academic coordination.' }
+    { value: 'academic_coordinator', title: 'Academic Coordinators', description: 'Staff approved to manage academic coordination.' },
+    { value: 'hod', title: 'Heads of Department', description: 'Department heads who manage syllabus and faculty subject allocation.' }
   ];
   const [query, setQuery] = useState('');
   const [activeSection, setActiveSection] = useState(null);
@@ -443,7 +448,7 @@ function UserAccessManagement({ users = [], reload }) {
             {!filteredPeople.length && <tr><td colSpan="6" className="muted">{query.trim() || branchFilter || sectionFilter ? 'No accounts match your search and filters.' : `No ${activeSection.title.toLowerCase()} have been added yet.`}</td></tr>}</tbody>
           </table>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '18px', flexWrap: 'wrap' }}><p className="muted" style={{ margin: 0 }}>Use Add to create an account and grant its portal access.</p><button type="button" className="people-add" onClick={() => { setEditing(null); setForm({ fullName: '', email: '', password: '', rollNumber: '', department: branchFilter === '__unassigned' ? '' : branchFilter, section: sectionFilter || '1', employeeCode: '' }); setFormOpen(true); }}>+ Add {sectionLabel}</button></div>
+        {activeSection.value !== 'hod' && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '18px', flexWrap: 'wrap' }}><p className="muted" style={{ margin: 0 }}>Use Add to create an account and grant its portal access.</p><button type="button" className="people-add" onClick={() => { setEditing(null); setForm({ fullName: '', email: '', password: '', rollNumber: '', department: branchFilter === '__unassigned' ? '' : branchFilter, section: sectionFilter || '1', employeeCode: '' }); setFormOpen(true); }}>+ Add {sectionLabel}</button></div>}
         </>}
       </section>}
       {formOpen && activeSection && <div className="timetable-modal-backdrop"><section className="timetable-modal-content"><div className="modal-header"><div><h2>{editing ? `Edit ${sectionLabel}` : `Add ${sectionLabel}`}</h2><p className="muted">Enter the account details for portal access.</p></div><button type="button" className="modal-close-btn" onClick={() => setFormOpen(false)}>X</button></div><form className="modal-form" onSubmit={savePerson}>
@@ -927,6 +932,10 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
         users: base[5].data.users || [],
         notifications: base[6].data.notifications || []
       });
+      if(role==='hod'){
+        const h=await api.get('/hod/overview');
+        setData(current=>({...current,values:h.data.overview}));
+      }
       setStudent(studentData);
     } catch (e) {
       if ([401, 403].includes(e.response?.status) || e.response?.data?.message?.toLowerCase().includes('token')) {
@@ -948,6 +957,7 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
     faculty: [['Home','Dashboard',Home],['Schedule','My Timetable',Calendar],['Attendance','Attendance',CheckCircle2]],
     admin: [['Home','Dashboard',Home],['People','User Management',Users],['Academics','Academic Management',BookOpen]],
     academic_coordinator: [['Home','Dashboard',Home],['Schedule','Timetable Management',Calendar],['Syllabus','Syllabus',BookOpen]],
+    hod: [['Home','Dashboard',Home],['Syllabus','Syllabus Structure',BookOpen],['Preferences','Preference Sheets',BookMarked],['Assignments','Assignments',FileText]],
     student_coordinator: [['Home','Dashboard',Home],['Schedule','Class Timetable',Calendar],['Session','Attendance Session',QrCode]]
   }[role] || [];
   const isHome = active === 'Dashboard';
@@ -963,6 +973,8 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
 
   const statValues = role === 'student'
     ? [values.attendance, values.assignments, values.events, values.notifications]
+    : role === 'hod'
+      ? [values.openSheets||0,values.responses||0,values.pendingAssignments||0,values.confirmedStructures||0]
     : role === 'faculty'
     ? [values.subjects ?? 0, data.timetable.filter(t => t.day_of_week === new Date().getDay()).length || 0, values.sessions ?? 0, values.notices ?? 0]
     : role === 'student_coordinator'
@@ -1056,6 +1068,7 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
           <div>
             <p className="eyebrow">{role.replaceAll('_', ' ').toUpperCase()} PORTAL</p>
             <h1>{isHome ? `Welcome, ${name.split(' ')[0]}` : active}</h1>
+            {role === 'hod' && active === 'Syllabus Structure' && <p className="hod-syllabus-subtitle">Upload the four-year syllabus once. It is split into eight semesters and their subjects for you to check.</p>}
           </div>
           <button className="notification" onClick={() => onNavigate('Notifications')} title="Open notifications" aria-label="Open notifications">
             <Bell />
@@ -1065,7 +1078,7 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
 
         {error && <p className="error" style={{ marginBottom: '16px' }}>{error}</p>}
         {['student','student_coordinator'].includes(role) && <LocalAttendanceAlerts onOpen={()=>onNavigate(role==='student'?'Attendance':'AttendanceSession')}/>}
-        {timetableAlerts.reminder && <aside className="timetable-reminder-popup" role="alert"><Bell /><div><strong>{timetableAlerts.reminder.title}</strong><p>{timetableAlerts.reminder.message}</p></div><button onClick={()=>{onNavigate(timetableAlerts.reminder.target);timetableAlerts.dismiss();}}>Open timetable</button><button className="timetable-reminder-close" aria-label="Dismiss class reminder" onClick={timetableAlerts.dismiss}>×</button></aside>}
+        {timetableAlerts.reminder && <aside className="timetable-reminder-popup" role="alert"><Bell /><div><strong>{timetableAlerts.reminder.title}</strong><p>{timetableAlerts.reminder.message}</p></div><button onClick={()=>{const target=timetableAlerts.reminder.target;onNavigate(target);timetableAlerts.dismiss();}}>Open class details</button><button className="timetable-reminder-close" aria-label="Dismiss class reminder" onClick={timetableAlerts.dismiss}>×</button></aside>}
 
         {role === 'student' && student?.profile && !student.profile.academic_section_id && (
           <div className="unassigned-student-notice" role="alert">
@@ -1079,13 +1092,17 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
 
         {loading ? (
           <div className="loading">Loading your academic workspace…</div>
-        ) : role === 'faculty' && !isHome && !['Exam Schedule','Notifications','Syllabus','Academic Calendar'].includes(active) ? (
+        ) : role === 'faculty' && !isHome && !['Exam Schedule','Notifications','Syllabus','Academic Calendar','Subject Preferences','My Subjects'].includes(active) ? (
           <FacultyDashboard
             name={name}
             items={items}
             activeTab={isHome ? 'overview' : active}
             onNavigate={onNavigate}
           />
+        ) : role==='faculty'&&['Subject Preferences','My Subjects'].includes(active) ? (
+          <FacultyPreferenceWorkspace title={active}/>
+        ) : role==='hod'&&!isHome ? (
+          <HodWorkspace title={isHome?'Dashboard':active} onNavigate={onNavigate}/>
         ) : isHome ? (
           <>
             <section className="stats">
@@ -1137,6 +1154,7 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
             reload={load}
             values={values}
             timetableAlerts={timetableAlerts}
+            onNavigate={onNavigate}
           />
         )}
       </main>
@@ -1150,7 +1168,7 @@ export function RoleDashboard({ role, name, active, onNavigate, onLogout, onRole
 }
 
 // Workspace Component rendering active sub-modules
-function Workspace({ role, title, data, student, name, canPublish, canSessions, reload, values, timetableAlerts }) {
+function Workspace({ role, title, data, student, name, canPublish, canSessions, reload, values, timetableAlerts, onNavigate }) {
   let content;
 
   const subjects = (data.subjects || []).map(x=>[x.code,x.name,x.department,x.faculty||'Not assigned']);
@@ -1164,6 +1182,20 @@ function Workspace({ role, title, data, student, name, canPublish, canSessions, 
     content=<MyFaculty/>;
   } else if(title==='Responsibilities & Access'){
     content=<AccessResponsibilities/>;
+  } else if(role==='faculty'&&['Subject Preferences','My Subjects'].includes(title)){
+    content=<FacultyPreferenceWorkspace title={title}/>;
+  } else if(role==='hod' && title==='Syllabus'){
+    content=<SyllabusManagement role={role}/>;
+  } else if(role==='hod'){
+    content=<HodWorkspace title={title} onNavigate={name=>{}}/>;
+  } else if(role==='academic_coordinator'&&title==='HOD Assignment Sheets'){
+    content=<CoordinatorAssignmentSubmissions/>;
+  } else if(role==='academic_coordinator'&&title==='Room Allotment'){
+    content=<RoomAllotment/>;
+  } else if(role==='academic_coordinator'&&title==='Rooms and Labs'){
+    content=<RoomsLabs onNavigate={onNavigate}/>;
+  } else if(role==='academic_coordinator'&&['Received from HOD','Timetable Settings','Generate and Review'].includes(title)){
+    content=<TimetableManagement role={role} rows={data.timetable} reload={reload} student={student} initialView="grid"/>;
   } else if(role==='student_coordinator'&&['Class Students','Class Performance','Class Assignments','Class Information'].includes(title)){
     content=<CoordinatorWorkspace title={title}/>;
   } else if (role==='student_coordinator'&&['Attendance Session','Class Attendance','Attendance Status','Session QR & Timer'].includes(title)) {
@@ -1249,7 +1281,7 @@ function Workspace({ role, title, data, student, name, canPublish, canSessions, 
   }
 
   return (
-    <section className="grid">
+    <section className={role==='academic_coordinator'&&['Rooms and Labs','Room Allotment'].includes(title)?'grid room-workspace-grid':'grid'}>
       <article className="panel span2">
         <div className="panel-head">
           <h2>{title}</h2>

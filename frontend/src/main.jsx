@@ -9,7 +9,7 @@ const entryPath = view => nativeRuntime() ? '/index.html?view='+view : '/'+view;
 import './styles.css';
 import './mobile.css';
 import {destinationForRole,preferredRole,assignedRoles} from './session.js';
-const paths={student:'/student.html',student_coordinator:'/student-coordinator.html',faculty:'/faculty.html',academic_coordinator:'/academic-coordinator.html',admin:'/admin.html'};
+const paths={student:'/student.html',student_coordinator:'/student-coordinator.html',faculty:'/faculty.html',academic_coordinator:'/academic-coordinator.html',hod:'/hod.html',admin:'/admin.html'};
 function Login(){
  const [serverUrl,setServerUrl]=useState(()=>api.defaults.baseURL||'');
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);

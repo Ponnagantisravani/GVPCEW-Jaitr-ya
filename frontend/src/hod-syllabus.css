@@ -1,0 +1,73 @@
+.content:has(.hod-syllabus){background-color:#f5f2e7;background-image:linear-gradient(rgba(65,79,56,.075) 1px,transparent 1px),linear-gradient(90deg,rgba(65,79,56,.075) 1px,transparent 1px);background-size:42px 42px}
+.content:has(.hod-syllabus)>header{background:transparent;border-bottom:0;box-shadow:none;margin-bottom:0;padding-bottom:8px}
+.hod-syllabus-subtitle{margin:5px 0 0;color:#586962;font-size:17px;line-height:1.4}
+.hod-syllabus{display:grid;gap:18px;min-width:0;background:transparent;background-image:none;padding:0 0 24px}
+.hod-syllabus-heading{display:none}
+.hod-syllabus-card{background:#fff;border:1px solid #d1cbb8;border-radius:13px;padding:20px;min-width:0}
+.hod-card-heading h2,.hod-review-heading h2{font-size:21px;color:#1d302a;margin:0}
+.hod-card-heading p{margin:4px 0 14px;color:#596861}
+.hod-structure-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px 16px;align-items:end}
+.hod-structure-form>label{display:grid;gap:6px;font-weight:650;color:#21352e;min-width:0}
+.hod-structure-form input,.hod-structure-form select{min-width:0;width:100%;height:44px;padding:8px 12px;border:1px solid #a9a38e;border-radius:8px;color:#24352f;background:#fff;font:inherit}
+.hod-structure-form small{font-size:12px;color:#586962;font-weight:600}
+.hod-file-row{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,280px);gap:14px;align-items:center}
+.hod-file-picker{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;gap:2px 12px;position:relative;padding:13px 15px;border:1px dashed #9e987e;border-radius:10px;background:#faf9f3;min-height:66px;cursor:pointer}
+.hod-file-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.hod-file-picker .hod-file-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hod-file-meta{grid-column:1;color:#596861;font-size:13px}
+.hod-secondary-button,.hod-primary-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 15px;border-radius:8px;font:inherit;font-weight:700;cursor:pointer}
+.hod-file-picker .hod-secondary-button{grid-column:2;grid-row:1/3;border:1px solid #1c5542;color:#1c5542;background:#fff;pointer-events:none}
+.hod-primary-button{border:1px solid #194d3b;background:#194d3b;color:white}
+.hod-secondary-button{border:1px solid #988f77;background:#fff;color:#24352f}
+.hod-structure-form>.hod-upload-help{grid-column:1/-1;margin:0;color:#586962}
+.hod-structures-table{border-collapse:collapse;table-layout:auto!important}
+.hod-structures-table th,.hod-structures-table td{padding:10px 12px!important;border:1px solid #d1cbb8!important;vertical-align:middle!important}
+.hod-structures-table th{background:#f3f0e2;color:#596861;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
+.hod-structures-table td{font-size:14px}
+.hod-structure-status.confirmed{color:#1c624a}.hod-structure-status.draft{color:#835800}
+.hod-text-button{border:0!important;background:transparent!important;color:#28715a!important;text-decoration:underline;padding:0!important;font-weight:700}
+.hod-review-heading{display:flex;justify-content:space-between;gap:16px;align-items:start}
+.hod-review-summary{margin:0;color:#596861;max-width:230px}
+.hod-semester-tabs{overflow:auto;border-bottom:1px solid #d1cbb8;margin:10px 0 13px}
+.hod-semester-tabs>div{display:flex;min-width:max-content;justify-content:space-between;gap:4px}
+.hod-semester-tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:#596a62;padding:10px 9px;font:inherit;font-size:14px;font-weight:650;white-space:nowrap}
+.hod-semester-tabs button.active{border-bottom-color:#194d3b;color:#153c30}
+.hod-review-card .hod-table-wrap{overflow:auto}
+.hod-review-card .hod-table-wrap table{table-layout:fixed;min-width:1000px;border-collapse:collapse}
+.hod-review-card th,.hod-review-card td{padding:8px!important;border:1px solid #d1cbb8!important;vertical-align:middle!important}
+.hod-review-card th{background:#f3f0e2;color:#596861;text-transform:uppercase;font-size:11px;letter-spacing:.035em}
+.hod-review-card th:nth-child(1){width:10%}.hod-review-card th:nth-child(2){width:30%}.hod-review-card th:nth-child(3){width:13%}.hod-review-card th:nth-child(4),.hod-review-card th:nth-child(5),.hod-review-card th:nth-child(6){width:12%}.hod-review-card th:nth-child(7){width:14%}
+.hod-review-card td input,.hod-review-card td select{width:100%;min-width:0;height:38px;border:1px solid #d1cbb8;border-radius:6px;padding:6px 8px;font:inherit;background:#fff;box-sizing:border-box}
+.hod-check-ok{color:#596861;font-size:13px}
+.hod-check-cell{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.hod-delete-subject{border:0!important;background:transparent!important;color:#9b3025!important;text-decoration:underline;padding:0!important;font:inherit;font-size:12px;cursor:pointer}
+.hod-inline-save{padding:6px 9px!important;background:#194d3b!important;color:#fff!important;border:0!important;border-radius:6px}
+.hod-review-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:13px}
+.hod-review-actions>.hod-primary-button{margin-left:auto}
+.hod-move-label{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hod-move-label select{border:1px solid #d1cbb8;border-radius:6px;padding:6px;max-width:180px;font:inherit}
+.hod-add-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:15px;padding:15px;background:#faf9f3;border:1px solid #d1cbb8;border-radius:9px}
+.hod-add-form h3{grid-column:1/-1;margin:0;color:#193e32}
+.hod-add-form label{display:grid;gap:5px;font-size:13px;font-weight:650}
+.hod-add-form input,.hod-add-form select{height:38px;min-width:0;border:1px solid #d1cbb8;border-radius:6px;padding:6px 8px;font:inherit}
+@media(max-width:900px){.hod-structure-form{grid-template-columns:repeat(2,minmax(0,1fr))}.hod-review-heading{display:block}.hod-review-summary{max-width:none;margin-top:6px}}
+@media(max-width:600px){.hod-syllabus{gap:12px}.hod-syllabus-card{padding:14px}.hod-structure-form{grid-template-columns:1fr}.hod-file-row{grid-template-columns:1fr}.hod-file-row>.hod-primary-button{width:100%}.hod-review-actions>.hod-primary-button{margin-left:0;width:100%}.hod-review-actions>*{max-width:100%}.hod-add-form{grid-template-columns:1fr}.hod-structures-table{min-width:720px}}
+
+.content:has(.faculty-preferences){background-color:#f5f2e7;background-image:linear-gradient(rgba(65,79,56,.075) 1px,transparent 1px),linear-gradient(90deg,rgba(65,79,56,.075) 1px,transparent 1px);background-size:42px 42px}
+.content:has(.faculty-preferences)>header{background:transparent;border-bottom:0;box-shadow:none;margin-bottom:0}
+.content:has(.faculty-preferences)>header h1{font-size:clamp(32px,3.2vw,48px);line-height:1.08;color:#123c31;margin:7px 0}
+.content:has(.faculty-preferences)>header .eyebrow{color:#28715a;letter-spacing:.14em;font-weight:700}
+.faculty-preferences{display:grid;gap:18px;min-width:0;color:#1d302a}
+.faculty-pref-card{background:#fff;border:1px solid #ded8c6;border-radius:15px;padding:22px 24px;min-width:0}
+.faculty-pref-card h2{margin:0 0 12px;color:#1d302a;font-size:21px}
+.faculty-pref-card p{color:#596861}
+.faculty-pref-summary{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.faculty-pref-summary>div:first-child{flex:1 1 480px;min-width:0}
+.faculty-pref-summary h2{margin:0 0 6px;font-size:23px}
+.faculty-pref-summary p{margin:0;max-width:800px;font-size:16px;line-height:1.5}
+.faculty-pref-badges{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.faculty-pref-badges span{display:inline-flex;align-items:center;min-height:42px;padding:8px 16px;border-radius:999px;background:#eef0ef;color:#4c514f;font-weight:650;white-space:nowrap}
+.faculty-pref-badges .open{background:#e3f2eb;color:#205c45}.faculty-pref-badges .closed{background:#fce9e5;color:#922d22}.faculty-pref-badges .deadline{background:#fff1c9;color:#755100}.faculty-pref-badges .submitted{background:#e3f2eb;color:#205c45}.faculty-pref-badges .pending{background:#eef0ef;color:#4c514f}
+.faculty-pref-table{overflow:auto;max-width:100%}.faculty-pref-table table{width:100%;border-collapse:collapse;table-layout:auto}.faculty-pref-table th,.faculty-pref-table td{padding:14px 12px;border-bottom:1px solid #e7e2d4;text-align:left;vertical-align:middle}.faculty-pref-table th{color:#596861;font-size:13px;text-transform:uppercase;letter-spacing:.045em}.faculty-pref-table td{font-size:15px}.faculty-pref-table td small{display:block;color:#727e78;margin-top:3px}.faculty-pref-table a{color:#237057;text-decoration:underline;font-weight:650}
+.faculty-pref-help{margin:0 0 16px}.faculty-pref-ranks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.faculty-pref-extra{display:grid;grid-template-columns:minmax(250px,1fr) 2fr;gap:16px;margin-top:16px}.faculty-preferences label{display:grid;gap:8px;color:#596861;font-weight:650}.faculty-preferences input:not([type=checkbox]),.faculty-preferences select{width:100%;min-width:0;min-height:48px;padding:10px 13px;border:1px solid #d1cbb8;border-radius:10px;background:#fff;color:#1d302a;font:inherit;box-sizing:border-box}.faculty-pref-sheet-select{flex:1 1 100%;max-width:500px}.faculty-pref-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.faculty-pref-actions button{min-height:48px;padding:10px 20px;border:1px solid #194d3b;border-radius:10px;background:#194d3b;color:#fff;font:inherit;font-weight:700;cursor:pointer}.faculty-pref-actions button.secondary{background:#fff;color:#194d3b}.faculty-pref-actions button:disabled{opacity:.5;cursor:not-allowed}.faculty-pref-footnote{margin:14px 0 0;font-size:14px}.faculty-pref-empty p{margin:0 0 14px}.faculty-pref-empty button{padding:10px 16px;border:1px solid #194d3b;border-radius:8px;background:#fff;color:#194d3b;font:inherit;font-weight:650;cursor:pointer}.faculty-pref-notice{margin:0;padding:12px 14px;border-radius:8px;background:#e7f5ed;color:#205c45}
+@media(max-width:760px){.faculty-pref-card{padding:16px}.faculty-pref-summary{align-items:flex-start}.faculty-pref-ranks,.faculty-pref-extra{grid-template-columns:1fr}.faculty-pref-badges{gap:7px}.faculty-pref-badges span{min-height:36px;padding:7px 12px}.faculty-pref-table table{min-width:620px}}

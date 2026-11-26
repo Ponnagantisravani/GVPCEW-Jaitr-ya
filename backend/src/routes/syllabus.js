@@ -11,7 +11,9 @@ import { ZipArchive } from 'archiver';
 
 export const syllabusRouter = Router();
 const editors = ['academic_coordinator', 'admin'];
-const isEditor = req => (req.user.roles || [req.user.role]).some(role => editors.includes(role));
+const departmentEditors = [...editors, 'hod'];
+const structureEditors = [...editors, 'hod'];
+const isEditor = req => (req.user.roles || [req.user.role]).some(role => departmentEditors.includes(role));
 
 const selectQuery = `
   select s.id, s.title, s.department, s.department_id, s.academic_section_ids, s.subject_id, s.faculty_id,
@@ -43,9 +45,9 @@ const schema = z.object({
   facultyId: z.string().uuid().optional()
 }).refine(data => Boolean(data.structure) !== Boolean(data.pdf && data.file_name));
 
-syllabusRouter.use(requireAuth, allowRoles(...editors, 'student', 'student_coordinator', 'faculty'));
+syllabusRouter.use(requireAuth, allowRoles(...departmentEditors, 'student', 'student_coordinator', 'faculty'));
 
-syllabusRouter.get('/metadata', allowRoles(...editors), asyncHandler(async (req, res) => {
+syllabusRouter.get('/metadata', allowRoles(...departmentEditors), asyncHandler(async (req, res) => {
   const scope = await publicationScope(req);
   const departmentIds = [...new Set(scope.sections.map(s => s.department_id))];
   const [facultyRes, subjectsRes, departmentsRes] = await Promise.all([
@@ -85,7 +87,7 @@ syllabusRouter.param('id', (req, res, next, id) => {
 
 // The coordinator receives detected records first; nothing is published until
 // the reviewed list is sent to /publish-detected.
-syllabusRouter.post('/detect', allowRoles(...editors), asyncHandler(async (req, res) => {
+syllabusRouter.post('/detect', allowRoles(...structureEditors), asyncHandler(async (req, res) => {
   const { pdf, department = '', year = '', semester = '' } = req.body || {};
   const file = Buffer.from(String(pdf || ''), 'base64');
   if (!file.length || file.length > 25 * 1024 * 1024 || file.subarray(0, 5).toString() !== '%PDF-') {
@@ -102,8 +104,53 @@ syllabusRouter.post('/detect', allowRoles(...editors), asyncHandler(async (req, 
   });
 }));
 
+syllabusRouter.post('/faculty-upload', allowRoles('faculty'), asyncHandler(async (req, res) => {
+  const parsed = z.object({ subjectId: z.string().uuid(), file_name: z.string().trim().min(1).max(200), pdf: z.string().min(1).max(35_000_000) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ message: 'Choose an assigned subject and a PDF syllabus.' });
+  const { subjectId, file_name, pdf } = parsed.data;
+  const bytes = Buffer.from(pdf, 'base64');
+  if (!bytes.length || bytes.length > 25 * 1024 * 1024 || bytes.subarray(0, 5).toString() !== '%PDF-') {
+    return res.status(400).json({ message: 'Upload a valid PDF no larger than 25 MB.' });
+  }
+  const assigned = await pool.query(`
+    select sub.id, sub.code, sub.name, sub.department_id, d.name department, f.id faculty_id
+    from subjects sub join departments d on d.id=sub.department_id
+    join faculty f on f.department_id=sub.department_id and f.user_id=$2
+    where sub.id=$1 and (
+      sub.faculty_id=f.id or exists(select 1 from timetable t where t.subject_id=sub.id and t.faculty_id=f.id and t.status='published')
+      or exists(select 1 from faculty_section_assignments a where a.subject_id=sub.id and a.faculty_id=f.id and a.status='active')
+    ) limit 1
+  `, [subjectId, req.user.sub]);
+  const subject = assigned.rows[0];
+  if (!subject) return res.status(403).json({ message: 'You can upload syllabi only for subjects assigned to you.' });
+  const detected = await parseSyllabusPdf(bytes, { department: subject.department });
+  const split = detected.map(item => ({
+    course_code: item.course_code || item.courseCode,
+    course_name: item.course_name || item.courseTitle,
+    start_page: item.startPage ?? item.start_page ?? item.page_start,
+    end_page: item.endPage ?? item.end_page ?? item.page_end,
+    pdf_base64: item.pdf_base64
+  }));
+  const client = await pool.connect();
+  try {
+    await client.query('begin');
+    const row = (await client.query(`
+      insert into syllabi(title,department,batch,description,file_name,pdf,created_by,department_id,subject_id,faculty_id,status)
+      values($1,$2,'Current', $3,$4,$5,$6,$7,$8,$9,'draft')
+      returning id,title,department,department_id,subject_id,faculty_id,batch,description,file_name,status,created_at,(pdf is not null) has_pdf
+    `, [subject.name, subject.department, `Faculty syllabus submission for ${subject.code}; pending HOD review.`, file_name, bytes, req.user.sub, subject.department_id, subject.id, subject.faculty_id])).rows[0];
+    await client.query('commit');
+    res.status(201).json({ syllabus: row, split: split.map(({ pdf_base64, ...item }) => item), splitCount: split.length, splitPdfsAttached: split.filter(item => item.pdf_base64).length });
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+}));
+
 // Generates and streams a ZIP archive containing all per-subject PDFs organized by semester folder + course_index.csv
-syllabusRouter.post('/export-zip', allowRoles(...editors), asyncHandler(async (req, res) => {
+syllabusRouter.post('/export-zip', allowRoles(...departmentEditors), asyncHandler(async (req, res) => {
   const { subjects = [], archiveName = 'BTech_Syllabus_Split_Archive.zip' } = req.body || {};
   if (!Array.isArray(subjects) || !subjects.length) {
     return res.status(400).json({ message: 'No subjects provided for ZIP export.' });
@@ -167,7 +214,7 @@ syllabusRouter.post('/export-zip', allowRoles(...editors), asyncHandler(async (r
   await archive.finalize();
 }));
 
-syllabusRouter.post('/publish-detected', allowRoles(...editors), asyncHandler(async (req, res) => {
+syllabusRouter.post('/publish-detected', allowRoles(...departmentEditors), asyncHandler(async (req, res) => {
   const { subjects, sectionIds, batch, file_name = '', publishFullSyllabus = true, fullTitle, fullDescription, pdf } = req.body || {};
   if (!Array.isArray(subjects) || !subjects.length || subjects.length > 200 || !batch?.trim()) {
     return res.status(400).json({ message: 'Provide reviewed subjects, an admitted batch, and target classes.' });
@@ -319,6 +366,16 @@ syllabusRouter.post('/publish-detected', allowRoles(...editors), asyncHandler(as
 
 syllabusRouter.get('/', asyncHandler(async (req, res) => {
   const manage = req.query.manage === 'true' && isEditor(req);
+
+  if (req.user.activeRole === 'hod' && !manage) {
+    const scope = await publicationScope(req);
+    const { rows } = await pool.query(`
+      ${selectQuery}
+      where s.department_id = any($1::uuid[])
+      order by s.created_at desc
+    `, [scope.sections.map(section => section.department_id), req.user.sub]);
+    return res.json({ syllabi: rows });
+  }
 
   if (req.user.activeRole === 'faculty' && !manage) {
     const { rows } = await pool.query(`
@@ -513,10 +570,10 @@ async function save(req, res) {
   res.status(req.params.id ? 200 : 201).json({ syllabus: rows[0] });
 }
 
-syllabusRouter.post('/', allowRoles(...editors), asyncHandler(save));
-syllabusRouter.put('/:id', allowRoles(...editors), asyncHandler(save));
+syllabusRouter.post('/', allowRoles(...departmentEditors), asyncHandler(save));
+syllabusRouter.put('/:id', allowRoles(...departmentEditors), asyncHandler(save));
 
-syllabusRouter.put('/:id/audience', allowRoles(...editors), async (req, res) => {
+syllabusRouter.put('/:id/audience', allowRoles(...departmentEditors), async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('begin');
@@ -544,7 +601,7 @@ syllabusRouter.put('/:id/audience', allowRoles(...editors), async (req, res) => 
   }
 });
 
-syllabusRouter.post('/:id/publish', allowRoles(...editors), asyncHandler(async (req, res) => {
+syllabusRouter.post('/:id/publish', allowRoles(...departmentEditors), asyncHandler(async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('begin');

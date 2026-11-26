@@ -1,0 +1,275 @@
+.room-allotment,
+.room-setup {
+  color: #102f39;
+  min-width: 0;
+}
+
+/* Room setup uses wide tables and controls; let it own the page width instead
+   of inheriting the dashboard's two-column card grid. */
+.room-workspace-grid { display: block; }
+.room-workspace-grid > .panel { width: 100%; min-width: 0; }
+
+.room-setup-title {
+  margin: 0 0 14px;
+}
+
+.room-setup-title h2 {
+  margin: 0 0 4px;
+  color: #153d34;
+  font-size: 24px;
+}
+
+.room-setup-title p,
+.room-setup p {
+  margin: 0;
+  color: #63766c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.room-allotment-kicker {
+  margin: 0 0 4px !important;
+  color: #245b4d !important;
+  font-size: 10px !important;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.room-allotment-control {
+  display: grid;
+  grid-template-columns: minmax(170px, .85fr) minmax(270px, 1.4fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0;
+  padding: 16px !important;
+}
+
+.room-allotment-control > label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #53655c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.room-allotment-control input[type="date"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 10px;
+  border: 1px solid #c9c6b5;
+  border-radius: 6px;
+  background: #fff;
+  color: #173d39;
+  font: inherit;
+}
+
+.room-allotment-checks {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #53655c;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.room-allotment-checks .ready { color: #245b4d; }
+.room-allotment-checks .not-ready { color: #9b4b29; }
+
+.room-allotment button,
+.room-setup button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 6px;
+  background: #174c3e;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.room-allotment button:disabled,
+.room-setup button:disabled {
+  opacity: .52;
+  cursor: not-allowed;
+}
+
+.room-allotment .room-outline,
+.room-allotment-footer .room-outline {
+  border: 1px solid #245b4d;
+  background: #fff;
+  color: #245b4d;
+}
+
+.room-allotment-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 14px 0;
+  border: 1px solid #e3e1d4;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.room-allotment-stats article {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-right: 1px solid #e3e1d4;
+}
+
+.room-allotment-stats article:last-child { border-right: 0; }
+.room-allotment-stats small { color: #68796f; font-size: 11px; }
+.room-allotment-stats strong { color: #173d39; font-size: 22px; line-height: 1.1; }
+.room-allotment-stats span { color: #63766c; font-size: 11px; }
+
+.room-allotment-grid { margin-top: 14px; padding: 16px !important; }
+
+.room-allotment-grid-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.room-allotment-grid-head h3 { margin: 0 0 5px; color: #173d39; font-size: 18px; }
+.room-allotment-grid-head p { margin: 0; color: #63766c; font-size: 12px; line-height: 1.5; }
+.room-allotment-grid-head > span { max-width: 38%; color: #63766c; font-size: 12px; }
+
+.room-allotment-empty {
+  padding: 28px 8px;
+  color: #63766c;
+  font-size: 13px;
+  text-align: center;
+}
+
+.room-allotment-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #ddd9c9;
+  border-radius: 5px;
+}
+
+.room-allotment table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 11px;
+}
+
+.room-allotment th,
+.room-allotment td {
+  padding: 8px;
+  border: 1px solid #ddd9c9;
+  text-align: left;
+  vertical-align: top;
+}
+
+.room-allotment thead th { background: #f2efdf; color: #53655c; font-weight: 650; white-space: nowrap; }
+.room-allotment tbody th { background: #f9f8f2; white-space: nowrap; }
+
+.room-allotment-cell {
+  display: grid;
+  grid-template-columns: 25px minmax(68px, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 96px;
+  margin: 1px 0 4px;
+  padding: 5px;
+  border: 1px solid #e5e0d1;
+  background: #fff;
+}
+
+.room-allotment-cell > span { color: #63766c; font-size: 10px; }
+.room-allotment-cell select { width: 100%; min-width: 0; border: 0; background: transparent; color: #173d39; font: inherit; font-size: 11px; font-weight: 650; }
+.room-allotment-cell.room-cell-changed { background: #f2efdf; }
+.room-allotment-cell.room-cell-changed select { background: #f2efdf; }
+
+.room-allotment-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px 16px !important;
+  color: #63766c;
+  font-size: 12px;
+}
+
+.room-allotment-footer > div { min-width: 0; line-height: 1.5; }
+.room-allotment-footer strong { color: #245b4d; }
+
+.room-allotment-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #edc7b4;
+  border-radius: 5px;
+  background: #fff4ed;
+  color: #743b27;
+  font-size: 12px;
+}
+
+.room-allotment-success { margin: 10px 0; padding: 9px; border-radius: 5px; background: #edf6ef; color: #245b4d; font-size: 12px; }
+.room-allotment-history { margin-top: 14px; padding: 12px; border: 1px solid #e3e1d4; border-radius: 6px; background: #fff; font-size: 12px; }
+.room-allotment-history summary { cursor: pointer; font-weight: 650; }
+.room-allotment-history p { margin: 8px 0; color: #63766c; }
+
+.room-setup { display: grid; gap: 16px; }
+.room-setup .panel { min-width: 0; padding: 16px; }
+.room-setup .room-allotment-stats { margin: 0; }
+.room-setup .room-allotment-stats article span { font-size: 12px; }
+.room-setup-short { color: #9b4b29 !important; font-weight: 700; }
+.room-setup h3 { margin: 4px 0 8px; color: #173d39; font-size: 17px; }
+
+.room-setup-add { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 10px 0; }
+.room-setup-add label { display: grid; gap: 5px; color: #53655c; font-size: 12px; }
+.room-setup-add input,
+.room-setup-add select,
+.room-setup td input,
+.room-setup td select { min-height: 36px; padding: 6px 8px; border: 1px solid #cfd8ce; border-radius: 5px; background: #fff; color: #173d39; }
+
+.room-inventory { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 18px; }
+.room-inventory label { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border: 1px solid #d7ddcf; border-radius: 5px; background: #f7f7ef; font-size: 11px; }
+.room-inventory label select { max-width: 145px; min-height: 28px; border: 1px solid #d6d1bf; border-radius: 4px; background: #fff; color: #173d39; font-size: 10px; }
+.room-inventory .room-inactive { opacity: .6; }
+
+.room-table-wrap { width: 100%; overflow-x: auto; margin: 12px 0; }
+.room-setup table { width: 100%; min-width: 650px; border-collapse: collapse; background: #fff; font-size: 13px; }
+.room-setup th,
+.room-setup td { padding: 10px; border: 1px solid #dedbcb; text-align: left; vertical-align: middle; }
+.room-setup thead th { background: #f2efdf; color: #53655c; font-size: 11px; letter-spacing: .04em; }
+.room-setup td:nth-child(2) { min-width: 210px; }
+.room-home-list { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.room-home-list select { min-width: 130px; }
+.room-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px !important; border: 1px solid #aaa28c !important; background: #fff !important; color: #173d39 !important; }
+.room-chip b { color: #9b4b29; }
+.room-borrow { display: flex; align-items: center; gap: 9px; margin: 16px 0 2px; }
+.room-setup .room-allotment-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.room-setup .room-table-wrap select[multiple] { display: block; width: min(100%, 320px); min-width: 180px; min-height: 96px; margin-bottom: 5px; }
+
+@media (max-width: 900px) {
+  .room-allotment-control { grid-template-columns: 1fr 1fr; }
+  .room-allotment-grid-head { flex-direction: column; }
+  .room-allotment-grid-head > span { max-width: none; }
+}
+
+@media (max-width: 650px) {
+  .room-allotment-control { grid-template-columns: 1fr; }
+  .room-allotment-control > button,
+  .room-allotment-footer > button { width: 100%; }
+  .room-allotment-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .room-allotment-stats article:nth-child(2) { border-right: 0; }
+  .room-allotment-stats article:nth-child(-n+2) { border-bottom: 1px solid #e3e1d4; }
+  .room-allotment-footer,
+  .room-setup .room-allotment-footer { align-items: stretch; flex-direction: column; }
+  .room-setup .room-allotment-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

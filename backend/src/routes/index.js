@@ -8,6 +8,7 @@ import {coordinatorRouter} from './coordinator.js';
 import { portalRouter } from './portal.js';
 import { attendanceSessionRouter } from './attendanceSessions.js';
 import { timetableRouter } from './timetable.js';
+import { roomAllotmentRouter } from './roomAllotment.js';
 import { facultyLeaveRequestsRouter } from './facultyLeaveRequests.js';
 import { syllabusRouter } from './syllabus.js';
 
@@ -24,6 +25,7 @@ router.use('/', portalRouter);
 router.use('/timetable', timetableGeneratorRouter);
 router.use('/attendance-sessions', attendanceSessionRouter);
 router.use('/timetables', timetableRouter);
+router.use('/room-allotments', roomAllotmentRouter);
 router.use('/faculty/leave-requests', facultyLeaveRequestsRouter);
 router.use('/syllabi', syllabusRouter);
 
@@ -60,3 +62,6 @@ router.use('/local-attendance-demo',localAttendanceDemoRouter);
 
 import {subjectAttendanceRouter} from './subjectAttendance.js';
 router.use('/attendance',subjectAttendanceRouter);
+
+import {hodRouter} from './hod.js';
+router.use('/hod',hodRouter);

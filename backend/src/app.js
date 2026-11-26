@@ -18,7 +18,8 @@ export function createApp() {
     upgradeInsecureRequests: []
   }} : false }));
   app.use(cors({ origin(origin, callback) { callback(null, !origin || env.allowedOrigins.includes(origin)); } }));
-  app.use(express.json({ limit: '25mb' }));
+  // Base64 PDF uploads expand by roughly one third; allow the 25 MB HOD PDFs.
+  app.use(express.json({ limit: '36mb' }));
   // A classroom can share one public IP. Pending successful requests count
   // against the IP budget until they finish, so leave room for a class burst.
   app.use('/api/auth/login', rateLimit({ windowMs: 15*60*1000, limit: 300, standardHeaders: true, legacyHeaders: false, skipSuccessfulRequests: true,
@@ -35,7 +36,7 @@ export function createApp() {
   if (existsSync(dist)) {
     app.use(express.static(dist, { index: false, maxAge: 0 }));
     const pages = { '/':'index.html', '/login':'index.html', '/register':'index.html', '/enroll':'index.html',
-      '/student':'student.html','/faculty':'faculty.html','/admin':'admin.html','/student-coordinator':'student-coordinator.html','/academic-coordinator':'academic-coordinator.html',
+      '/student':'student.html','/faculty':'faculty.html','/admin':'admin.html','/student-coordinator':'student-coordinator.html','/academic-coordinator':'academic-coordinator.html','/hod':'hod.html',
       '/student-dashboard':'student.html', '/faculty-dashboard':'faculty.html', '/admin-dashboard':'admin.html',
       '/student/coordinator':'student-coordinator.html', '/academic-coordinator/dashboard':'academic-coordinator.html' };
     app.get(Object.keys(pages), (req,res) => res.sendFile(dist + pages[req.path]));

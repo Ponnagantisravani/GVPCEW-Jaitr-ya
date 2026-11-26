@@ -4,7 +4,7 @@ export type EnrollmentStatus = {student_id: string; face_enrolled: boolean; enro
 export type EnrollmentCapture = {embedding_model: 'mobilefacenet-v1'; model_sha256: string; embedding: number[]; sample_count: number};
 export type PermissionState = {missing: string[]; notificationsAllowed: boolean};
 
-export type AttendanceSession = {id: string; section_id: string; period: string; started_at: string; expires_at: string; status: 'open' | 'closed'; broadcast?: boolean; late_expires_at?: string; monotonic_expires_at?: number; monotonic_late_expires_at?: number};
+export type AttendanceSession = {id: string; section_id: string; section_name?:string; subject_name?:string; period: string; started_at: string; expires_at: string; status: 'open' | 'closed'; broadcast?: boolean; late_expires_at?: string; monotonic_expires_at?: number; monotonic_late_expires_at?: number};
 export type StartPeriod = {default_attendance?: boolean; default_period?: boolean; year_number?: number; department_name?: string; timetable_id: string; section_id: string; section_name: string; subject_name: string; start_time: string; end_time: string; session_id: string | null; expires_at: string | null; subject_id?:string; period?:number; subject_kind?:'theory'|'lab'; batch_id?:string};
 export type SubjectStartOption={subject_id:string;name:string;kind:'theory'|'lab';faculty_name?:string;period_count?:number};
 export type SubjectStartSlot={id:string;subject_id:string;code:string;name:string;period:number;start_time:string;end_time:string;manual_period?:boolean};

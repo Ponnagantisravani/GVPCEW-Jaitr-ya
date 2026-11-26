@@ -16,6 +16,8 @@
     "db:migrate:section-subjects": "node scripts/migrate-section-subjects.js",
     "db:migrate:student-features": "node scripts/migrate-student-features.js",
     "db:migrate:syllabus": "node scripts/migrate-syllabus.js",
+    "db:migrate:hod-preferences": "node scripts/migrate-hod-preferences.js",
+    "db:seed:hod-sample": "node scripts/seed-hod-sample.js",
     "db:assign-sravani-roles": "node scripts/assign-sravani-roles.js",
     "db:import-cse-2024-counselling": "node scripts/import-cse-2024-counselling-roster.js",
     "db:normalize-cse-sections": "node scripts/normalize-cse-sections.js",

@@ -5,6 +5,7 @@ import { verifyDatabaseConnection } from "./config/db.js";
 
 import {startAttendanceLifecycleWorker} from './services/mobileAttendanceLifecycle.js';
 import {startPushWorker} from './services/mobilePushQueue.js';
+import {startHodPreferenceWorker} from './routes/hod.js';
 const app = createApp();
 
 async function start() {
@@ -16,6 +17,7 @@ async function start() {
       console.log(`Backend listening on port ${env.port}`);
       startSubjectAttendanceWorker();
       if (!demoOnly) {startPushWorker();startAttendanceLifecycleWorker();}
+      if (!demoOnly) void startHodPreferenceWorker();
     });
   } catch (error) {
     console.error("Failed to start backend.");
