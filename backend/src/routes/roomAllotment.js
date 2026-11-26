@@ -3,7 +3,6 @@ import {Router} from '../utils/router.js';
 import {pool} from '../config/db.js';
 import {requireAuth,allowRoles} from '../middleware/auth.js';
 import {manageDepartmentScope} from '../services/portalScope.js';
-import {requireSections} from '../services/academicAccess.js';
 
 export const roomAllotmentRouter=Router();
 roomAllotmentRouter.use(requireAuth,allowRoles('academic_coordinator','admin'));
@@ -86,7 +85,7 @@ export function makeAllotment(cfg,rows,weekStart,scope='2-4'){
  const week=isoMonday(req.body?.weekStart),scope=req.body?.scope==='1'?'1':'2-4';if(!week)return res.status(400).json({message:'Choose a valid Monday as the week start.'});
  const db=await pool.connect();try{await db.query('begin');const cfg=await setup(db,req);const years=scope==='1'?[1]:[2,3,4];const missing=years.filter(y=>!cfg.home[y].length);if(missing.length)throw Object.assign(new Error(`Home classrooms are missing for Year ${missing.map(yearName).join(', ')}. Save rooms for the selected years first.`),{status:409});
   const selectedClasses=scope==='1'?cfg.yearOneClasses:cfg.classes.filter(c=>years.includes(Number(c.year_number)));if(!selectedClasses.length)throw Object.assign(new Error(scope==='1'?'No Year I classes are configured for your department.':'No classes are configured for Years II–IV.'),{status:409});
-  const sectionIds=selectedClasses.map(s=>s.section_id||s.id).filter(Boolean);await requireSections(req,sectionIds,db);const {rows,signature}=await publication(db,sectionIds);if(!rows.length)throw Object.assign(new Error('No published timetable entries were found for the selected years.'),{status:409});
+  const sectionIds=selectedClasses.map(s=>s.section_id).filter(Boolean);const {rows,signature}=await publication(db,sectionIds);if(!rows.length)throw Object.assign(new Error('No published timetable entries were found for the selected years.'),{status:409});
   const ids=sectionIds;const scopedCfg={...cfg,classes:selectedClasses.map(s=>({...s,id:s.section_id||s.id})),yearOneClasses:selectedClasses};const cells=makeAllotment(scopedCfg,rows,week.toISOString().slice(0,10),scope);const end=new Date(week);end.setUTCDate(end.getUTCDate()+6);
   const record=(await db.query(`insert into room_allotments(week_start,week_end,published_by,section_ids,cells,status,timetable_signature,generated_at,published_at,updated_at) values($1,$2,$3,$4::uuid[],$5::jsonb,'draft',$6,now(),null,now()) on conflict(week_start,published_by) do update set week_end=excluded.week_end,section_ids=excluded.section_ids,cells=excluded.cells,status='draft',timetable_signature=excluded.timetable_signature,generated_at=now(),published_at=null,updated_at=now() returning *`,[week.toISOString().slice(0,10),end.toISOString().slice(0,10),req.user.sub,ids,JSON.stringify(cells),signature])).rows[0];
   await db.query('commit');res.json({allotment:record,scope,classes:selectedClasses.length});

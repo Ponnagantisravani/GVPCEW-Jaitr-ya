@@ -14,6 +14,7 @@ face-enrollment/dist/
 tools/__pycache__/
 
 .tmp/
+deploy/kubernetes/.backend-secrets.generated.json
 *.log
 .release/
 *.jks

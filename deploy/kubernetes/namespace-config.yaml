@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gvpcew-campus
+  labels:
+    app.kubernetes.io/part-of: gvpcew-smart-campus
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gvpcew-backend-config
+  namespace: gvpcew-campus
+data:
+  NODE_ENV: "production"
+  PORT: "4000"
+  DATABASE_SSL_MODE: "disable"
+  TRUST_PROXY: "1"
+  ALLOWED_ORIGINS: "http://localhost:30080,http://127.0.0.1:30080"

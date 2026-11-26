@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gvpcew-backend
+  namespace: gvpcew-campus
+spec:
+  type: ClusterIP
+  selector:
+    app: gvpcew-backend
+  ports:
+    - name: http
+      port: 4000
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gvpcew-backend
+  namespace: gvpcew-campus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gvpcew-backend
+  template:
+    metadata:
+      labels:
+        app: gvpcew-backend
+    spec:
+      containers:
+        - name: backend
+          image: gvpcew/backend:k8s-local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 4000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: gvpcew-backend-config
+            - secretRef:
+                name: gvpcew-backend-secrets
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
